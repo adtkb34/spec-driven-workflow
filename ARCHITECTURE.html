@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spec-Driven 产品工作流 · 架构设计</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --surface: #fff;
+      --text: #1a1a1a;
+      --muted: #5c5c5c;
+      --border: #e5e5e5;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --success: #059669;
+      --danger: #dc2626;
+      --sidebar-w: 260px;
+      --radius: 8px;
+      --font: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      --mono: "SF Mono", "Fira Code", "JetBrains Mono", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    nav.sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--sidebar-w);
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem 2rem;
+      z-index: 10;
+    }
+
+    nav.sidebar .logo {
+      font-weight: 700;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      margin-bottom: 1.25rem;
+      color: var(--text);
+      padding: 0 0.5rem;
+    }
+
+    nav.sidebar ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav.sidebar li { margin: 0.15rem 0; }
+
+    nav.sidebar a {
+      display: block;
+      padding: 0.35rem 0.5rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.82rem;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    nav.sidebar a:hover {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    nav.sidebar a.sub { padding-left: 1.25rem; font-size: 0.78rem; }
+
+    /* Main */
+    main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      max-width: 900px;
+      padding: 2.5rem 3rem 4rem;
+    }
+
+    header.hero {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header.hero h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0 0 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .lead {
+      background: var(--accent-soft);
+      border-left: 4px solid var(--accent);
+      padding: 1rem 1.25rem;
+      margin: 0;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: #1e3a5f;
+      font-size: 0.95rem;
+    }
+
+    .lead strong { color: var(--accent); }
+
+    section {
+      margin-bottom: 2.75rem;
+      scroll-margin-top: 1.5rem;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin: 0 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 2px solid var(--border);
+      letter-spacing: -0.01em;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem;
+      color: #333;
+    }
+
+    p { margin: 0.75rem 0; }
+
+    ul, ol { margin: 0.5rem 0 1rem; padding-left: 1.35rem; }
+    li { margin: 0.35rem 0; }
+
+    .layer-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+
+    @media (max-width: 768px) {
+      .layer-cards { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.15rem;
+    }
+
+    .card h4 {
+      margin: 0 0 0.5rem;
+      font-size: 0.9rem;
+      color: var(--accent);
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .diagram-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin: 1.25rem 0;
+      overflow-x: auto;
+    }
+
+    .diagram-wrap .mermaid { display: flex; justify-content: center; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+
+    th, td {
+      padding: 0.65rem 0.85rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    th {
+      background: #f4f4f5;
+      font-weight: 600;
+      font-size: 0.82rem;
+      color: #444;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.82em;
+      background: #f0f0f0;
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+    }
+
+    pre {
+      background: #18181b;
+      color: #e4e4e7;
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius);
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      line-height: 1.5;
+      margin: 1rem 0;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+
+    .callout {
+      background: #fefce8;
+      border: 1px solid #fde047;
+      border-radius: var(--radius);
+      padding: 0.85rem 1.1rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+
+    .callout-info {
+      background: var(--accent-soft);
+      border-color: #93c5fd;
+    }
+
+    .summary {
+      background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+      color: #fff;
+      padding: 1.25rem 1.5rem;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .summary strong { color: #bfdbfe; }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.15em 0.5em;
+      border-radius: 4px;
+      background: #dbeafe;
+      color: var(--accent);
+    }
+
+    .badge-opus { background: #ede9fe; color: #6d28d9; }
+    .badge-comp { background: #d1fae5; color: var(--success); }
+
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      padding: 0;
+    }
+
+    .steps li {
+      position: relative;
+      padding-left: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .steps li::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      width: 1.75rem;
+      height: 1.75rem;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .reject { color: var(--danger); }
+    .ok { color: var(--success); }
+
+    .compare-bad { background: #fef2f2; }
+    .compare-good { background: #f0fdf4; }
+
+    footer.doc-footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      nav.sidebar { display: none; }
+      main { margin-left: 0; padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <nav class="sidebar" aria-label="目录">
+      <div class="logo">Spec-Driven<br />产品工作流</div>
+      <ul>
+        <li><a href="#goals">1. 目标与非目标</a></li>
+        <li><a href="#principles">2. 设计原则</a></li>
+        <li><a href="#architecture">3. 整体架构</a></li>
+        <li><a href="#pipeline">4. 阶段流水线</a></li>
+        <li><a href="#gates" class="sub">4.5 可执行门/机器激活/披露</a></li>
+        <li><a href="#registry">5. Skill 注册表</a></li>
+        <li><a href="#registry-why" class="sub">5.1 为何本地精选</a></li>
+        <li><a href="#registry-schema" class="sub">5.2 注册表结构</a></li>
+        <li><a href="#enhancement" class="sub">5.4 增强包（非替换）</a></li>
+        <li><a href="#fallback">6. 缺口处理</a></li>
+        <li><a href="#routing">7. 模型路由</a></li>
+        <li><a href="#quality">8. 质量红线</a></li>
+        <li><a href="#dirs">9. 目录结构</a></li>
+        <li><a href="#deploy">10. 落地步骤</a></li>
+        <li><a href="#risks">11. 风险与缓解</a></li>
+        <li><a href="#summary">12. 总结</a></li>
+      </ul>
+    </nav>
+
+    <main>
+      <header class="hero">
+        <h1>Spec-Driven 产品工作流 · 架构设计文档</h1>
+        <p class="lead">
+          <strong>目标：</strong>用户输入一句模糊需求，经过一条可控的流水线被逐层细化成高质量 spec / plan / tasks，最终自动产出成熟、可运行的产品。<br /><br />
+          本工作流以 <strong>GitHub Spec Kit</strong> 为编排骨架，叠加 <strong>本地精选 Skill 注册表</strong>、<strong>三层降级补全机制</strong> 和 <strong>分层模型路由</strong> 三项增强。
+        </p>
+      </header>
+
+      <section id="goals">
+        <h2>1. 设计目标与非目标</h2>
+        <h3>目标</h3>
+        <ul>
+          <li><strong>一句话起步</strong>：用户只需描述「做什么」，无需预先想清所有细节。</li>
+          <li><strong>质量前置</strong>：在写代码之前，把需求与方案打磨到「零模糊点」。</li>
+          <li><strong>可控、能力固化</strong>：构建过程不依赖运行时不可控的外部变量，所用能力锁定来源/版本可复现。<strong>LLM 输出本身非确定，不承诺逐字可复现</strong>；可复现指流程、门与激活的能力集合。</li>
+          <li><strong>成本最优</strong>：在该深度思考的环节用强模型，在该按图施工的环节用快模型。</li>
+        </ul>
+        <h3>非目标</h3>
+        <ul>
+          <li class="reject">❌ 不做运行时「自动、每次、无人值守」地联网抓取并执行未审查的第三方 skill。</li>
+          <li class="reject">❌ 不为「将来可能用到」预留复杂度。</li>
+          <li class="reject">❌ 不把方向性判断推给用户去配置。</li>
+        </ul>
+      </section>
+
+      <section id="principles">
+        <h2>2. 设计原则（取舍优先级）</h2>
+        <p>严格排序，上条压倒下条：</p>
+        <ol>
+          <li><strong>正确 &gt; 快 &gt; 好看</strong></li>
+          <li><strong>验证过能跑 &gt; 声称完成</strong></li>
+          <li><strong>可控/可复现 &gt; 动态/花哨</strong></li>
+          <li><strong>删能力 / 复用已有 &gt; 新增能力</strong></li>
+          <li><strong>默认行为正确 &gt; 提供开关</strong></li>
+          <li><strong>一致性 &gt; 个性化</strong></li>
+          <li><strong>此刻解决此刻问题 &gt; 为将来预留</strong></li>
+        </ol>
+      </section>
+
+      <section id="architecture">
+        <h2>3. 整体架构</h2>
+        <p>三层结构，各司其职：</p>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+flowchart TB
+    subgraph L1["编排层 · Orchestration"]
+        SK["GitHub Spec Kit\nconstitution → specify → clarify → plan → analyze → tasks → implement"]
+    end
+    subgraph L2["能力层 · Capability"]
+        REG[("本地精选\nSkill 注册表")]
+        FB["三层降级补全机制"]
+    end
+    subgraph L3["执行层 · Execution"]
+        ROUTE{"模型路由器"}
+        OPUS["Opus\n深度推理"]
+        COMP["Composer\n快速执行"]
+    end
+    SK -->|"每个阶段按维度查表"| REG
+    REG -->|"命中"| SK
+    REG -->|"未命中"| ASK["用户闸门\n是否需要专门 skill?"]
+    ASK -->|"需要"| SUP["补全路径\n联网/选手动登记"]
+    ASK -->|"不需要"| FB
+    SUP -->|"固化"| REG
+    FB -->|"临时约束或兜底"| SK
+    SK -->|"每个阶段声明算力档位"| ROUTE
+    ROUTE --> OPUS
+    ROUTE --> COMP
+          </pre>
+        </div>
+        <div class="layer-cards">
+          <div class="card">
+            <h4>编排层</h4>
+            <p>Spec Kit 定义「做事的骨架与顺序」，是总指挥。</p>
+          </div>
+          <div class="card">
+            <h4>能力层</h4>
+            <p>注册表定「谁来保证质量」；未命中时先问用户，确认不需要专门 skill 才走降级。</p>
+          </div>
+          <div class="card">
+            <h4>执行层</h4>
+            <p>模型路由决定「这一步用哪个模型干」。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="pipeline">
+        <h2>4. 编排层：阶段流水线</h2>
+        <p>沿用 Spec Kit 的标准阶段，每个阶段声明两件事：<strong>挂载哪些维度的 skill</strong>、<strong>默认算力档位</strong>。</p>
+        <table>
+          <thead>
+            <tr>
+              <th>阶段</th>
+              <th>命令</th>
+              <th>职责</th>
+              <th>默认模型</th>
+              <th>质量门</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>宪法</td>
+              <td><code>/speckit.constitution</code></td>
+              <td>一次性确立全局原则、模型路由规则、质量红线</td>
+              <td><span class="badge badge-opus">Opus</span></td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>规范</td>
+              <td><code>/speckit.specify</code></td>
+              <td>把需求结构化为 <code>spec.md</code>，标出所有 <code>[NEEDS CLARIFICATION]</code></td>
+              <td><span class="badge badge-opus">Opus</span></td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>澄清</td>
+              <td><code>/speckit.clarify</code></td>
+              <td>逐条提问，消除模糊点</td>
+              <td><span class="badge badge-opus">Opus</span></td>
+              <td><strong>进 plan 前 spec 必须零模糊点</strong></td>
+            </tr>
+            <tr>
+              <td>计划</td>
+              <td><code>/speckit.plan</code></td>
+              <td>技术栈、架构、数据模型、接口、测试策略</td>
+              <td><span class="badge badge-opus">Opus</span></td>
+              <td><strong>进 plan 前必须先确认技术栈/架构方向</strong></td>
+            </tr>
+            <tr>
+              <td>分析</td>
+              <td><code>/speckit.analyze</code></td>
+              <td>交叉检查 spec / plan / tasks 一致性</td>
+              <td><span class="badge badge-opus">Opus</span></td>
+              <td><strong>不一致 / 运行方式不可行 不放行</strong></td>
+            </tr>
+            <tr>
+              <td>拆解</td>
+              <td><code>/speckit.tasks</code></td>
+              <td>拆成有序、可并行 <code>[P]</code> 的原子任务</td>
+              <td><span class="badge badge-opus">Opus</span></td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>实现</td>
+              <td><code>/speckit.implement</code></td>
+              <td>按依赖顺序执行，写代码 + 测试</td>
+              <td><span class="badge badge-comp">Composer</span>（卡住升 Opus）</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>验证</td>
+              <td><code>verify</code>（本工作流自有）</td>
+              <td>真运行 + 抓 console + 跑验收场景 + 截图取证，不收自我汇报</td>
+              <td><span class="badge badge-opus">Opus</span></td>
+              <td><strong>可执行 DoD 全过才算完成</strong></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="callout callout-info">原则：<strong>前期（理解与设计）全程 Opus，后期（执行）默认 Composer</strong>。详见第 7 节。</p>
+        <p class="callout">技术栈闸门的结论<strong>同时决定激活哪些条件领域维度</strong>（后端→<code>api_design</code>、前端→<code>frontend_ui</code>、需持久化→<code>data_modeling</code>、GCP→<code>gcp_runtime</code> 等，见 5.4）。</p>
+      </section>
+
+      <section id="gates">
+        <h2>4.5 从「声称」到「机制可强制」</h2>
+        <p>规则不只写在文档里，关键的<strong>可机械判定</strong>项由 <code>.specify/scripts/bash/</code> 下的门脚本执行，<strong>退出码即真相</strong>，先于任何主观判断。主观质量（一致性、品味、根因）仍由 Opus 判断——门与人工判断<strong>互补</strong>，缺一不可。</p>
+
+        <h3 id="gates-exec">可执行门（exec gates）</h3>
+        <table>
+          <thead><tr><th>时机</th><th>脚本</th><th>判定（非零即停）</th></tr></thead>
+          <tbody>
+            <tr><td>进 plan 前</td><td><code>gate-clarify.sh</code></td><td>spec 无残留 <code>[NEEDS CLARIFICATION]</code> / TODO</td></tr>
+            <tr><td>plan/tasks/implement 前</td><td><code>gate-stack.sh</code></td><td><code>stack.yml</code> 存在、<code>confirmed: true</code>、有 <code>form</code></td></tr>
+            <tr><td>plan 后 / analyze</td><td><code>activate-dimensions.sh</code></td><td>读 <code>stack.yml</code>+registry，<strong>确定性</strong>输出该激活的条件维度</td></tr>
+            <tr><td>analyze</td><td><code>gate-analyze.sh</code></td><td>聚合：无模糊点 / 栈已确认 / 用户故事在 tasks 有落点 / 激活维度路径可解析</td></tr>
+            <tr><td>implement 后</td><td><code>gate-verify.sh</code></td><td>跑 <code>verify.yml</code> 命令看退出码 + 扫残留 + 按 <code>form</code> 选 DoD 档</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="gates-stack">机器可读 stack.yml 驱动条件维度</h3>
+        <p>技术栈闸门把用户确认的方向写入 <code>FEATURE_DIR/stack.yml</code>（机器可读）：<code>form</code>（web/cli/service/library/pipeline）、能力标志（<code>backend</code>/<code>frontend</code>/<code>ui</code>/<code>persistence</code>/<code>llm</code>/<code>migration</code>/<code>observability</code>/<code>heavy_framework</code>/<code>docs_needed</code>）、<code>cloud</code>、<code>complexity</code>、<code>confirmed</code>。registry 每个条件维度有机器可读 <code>activate_if:</code>（如 <code>api_design.activate_if: [backend]</code>、<code>gcp_runtime.activate_if: [cloud=gcp]</code>）；<code>activate-dimensions.sh</code> 据此<strong>确定性</strong>激活，杜绝 vibe 误挂 / 漏挂。</p>
+
+        <h3 id="gates-disclosure">渐进披露 L1 → L2 → L3</h3>
+        <ul>
+          <li><strong>L1 = <code>summary</code></strong>（registry 内一行 what+when）：命中维度先只注入摘要（便宜）。</li>
+          <li><strong>L2 = <code>path</code> 全文 SKILL.md</strong>：仅当本阶段确需该维度细则时才 <code>Read</code>（贵）。</li>
+          <li><strong>L3 = skill 内 <code>references/</code></strong>：L2 仍不够时再下钻。</li>
+        </ul>
+        <p>多维度同阶段默认只摘要、按需展开，压住「全文一次性灌入」造成的指令稀释。</p>
+
+        <h3 id="gates-verify">verify 通用化：按 form 选 DoD 档位</h3>
+        <p>「完成」的 DoD <strong>按产物形态选档</strong>（见 <code>.specify/memory/verify-profiles.md</code>）。<code>chrome-devtools(-cli)</code> 仅 <strong>web 档</strong>必需；其余形态用各自命令验证：</p>
+        <table>
+          <thead><tr><th>form</th><th>DoD 重点</th></tr></thead>
+          <tbody>
+            <tr><td>web</td><td>build/test 绿 + console 零 error + 三态截图 + UX 红线</td></tr>
+            <tr><td>cli</td><td>二进制可跑 + <code>--help</code> + 正常/错误码 + 边界输入</td></tr>
+            <tr><td>service/api</td><td>启动 + 健康检查 + 关键端点 + 契约 + 鉴权拒绝</td></tr>
+            <tr><td>library</td><td>测试套件全绿 + 公共 API 冒烟 + 示例可跑</td></tr>
+            <tr><td>pipeline</td><td>样本输入跑通 + schema/行数校验 + 幂等</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="gates-fasttrack">快速通道（trivial）</h3>
+        <p><code>specify</code> 起始按判据给出 <code>complexity</code>。<strong>trivial</strong>（单关注点 / 无登录 / 无超本地持久化 / 可回滚 / 不接外部 API / 不引入新架构）走快速通道：跳过 clarify 提问（仍跑 <code>gate-clarify.sh</code> 自动扫描）、analyze 轻量核对、技术栈沿用既有可免暂停，但<strong>仍必过 verify 轻量档</strong>。standard/complex 走全流水线；拿不准默认按更高档。</p>
+
+        <pre class="mermaid">
+flowchart TB
+  TRIAGE{"triage 复杂度"}
+  TRIAGE -->|"trivial"| FAST["快速通道\nspecify(min) → implement → verify(轻)"]
+  TRIAGE -->|"standard/complex"| SPEC["specify"]
+  SPEC --> CLAR["clarify"]
+  CLAR --> GATE1["gate-clarify.sh"]
+  GATE1 --> STACKGATE["技术栈闸门 → 写 stack.yml(confirmed)"]
+  STACKGATE --> GATE2["gate-stack.sh"]
+  GATE2 --> PLAN["plan"]
+  PLAN --> ACT["activate-dimensions.sh"]
+  ACT --> ANALYZE["analyze + gate-analyze.sh"]
+  ANALYZE --> TASKS["tasks"]
+  TASKS --> IMPL["implement"]
+  IMPL --> GATE3["gate-verify.sh\n退出码 + 选 DoD 档"]
+  GATE3 -->|"fail"| IMPL
+  GATE3 -->|"pass"| DONE["完成(留证据 verify.md)"]
+  FAST --> GATE3
+        </pre>
+      </section>
+
+      <section id="registry">
+        <h2>5. 能力层：本地精选 Skill 注册表</h2>
+
+        <h3 id="registry-why">5.1 为什么是「本地精选」而非「运行时联网」</h3>
+        <ul>
+          <li><strong>可复现</strong>：构建结果不随外部网络/第三方仓库变化而漂移。</li>
+          <li><strong>安全</strong>：杜绝把未审查的第三方指令注入 spec / plan / 代码（prompt injection）。</li>
+          <li><strong>可治理</strong>：每个 skill 的来源、用途、审查状态都有据可查。</li>
+        </ul>
+
+        <h3 id="registry-schema">5.2 注册表结构</h3>
+        <p>位置：<code>.cursor/registry.yaml</code>。把「维度 → skill」做显式映射。</p>
+        <pre><code># .cursor/registry.yaml
+version: 1
+dimensions:
+  requirements:                 # 需求挖掘
+    skill: brainstorming
+    source: local
+    reviewed: 2026-06-02
+    bind_phase: [specify, clarify]
+
+  product_taste:                # 取舍 / 品味 / 砍需求
+    skill: first-principles
+    source: local
+    reviewed: 2026-06-02
+    bind_phase: [specify, plan, analyze]
+
+  quality:                      # 测试与质量
+    skill: tdd
+    source: local
+    reviewed: 2026-06-02
+    bind_phase: [plan, implement]
+
+  spec_normalization:           # 规范化产出 PRD/spec
+    skill: to-prd
+    source: local
+    reviewed: 2026-06-02
+    bind_phase: [specify]
+
+  verification:                 # 真运行验证 / 抓 console / 跑验收 / 取证
+    skill: chrome-devtools-cli   # 主选：纯 shell 驱动，不依赖 MCP
+    fallback_skill: chrome-devtools  # 降级：MCP 版
+    source: local
+    reviewed: 2026-06-02
+    bind_phase: [verify]
+
+  # —— 以下为「按需补全」占位，初始为空 ——
+  # 任何具体领域维度在首次缺口时由第 6 节机制补入</code></pre>
+        <p><strong>字段说明：</strong></p>
+        <ul>
+          <li><code>skill</code>：本地 skill 标识。</li>
+          <li><code>source</code>：<code>local</code>（手工精选）/ <code>discovered</code>（联网补全后固化）。</li>
+          <li><code>reviewed</code>：最近审查日期，用于定期复核。</li>
+          <li><code>bind_phase</code>：该维度在哪些 Spec Kit 阶段被激活。</li>
+        </ul>
+
+        <h3>5.3 维度划分原则</h3>
+        <ul>
+          <li>维度按「<strong>质量责任</strong>」而非「功能」划分（如：需求、品味、架构、质量、某专门领域知识）。</li>
+          <li><strong>不预设维度</strong>：只登记当前真正用到的维度 + 用户点名的高频领域，长尾靠第 6 节按需生长。</li>
+          <li><strong>条件维度（领域）默认休眠</strong>：带 <code>when:</code> 的专业领域维度只在命中条件后激活（见 5.4）。</li>
+        </ul>
+
+        <h3 id="enhancement">5.4 增强包（Enhancement Layer · 非替换）</h3>
+        <p>在本地精选之上叠加来自 <strong>Addy Osmani</strong>（<code>addyosmani/agent-skills</code>）、<strong>Superpowers</strong>（<code>obra/superpowers</code>）、<strong>Matt Pocock</strong>（<code>mattpocock/skills</code>）的能力，经隔离区审查后固化。<strong>只增强子步骤，不替代编排</strong>。</p>
+
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+flowchart TB
+    subgraph L0 [L0 编排 · 不可替换]
+        SK["Spec Kit + 技术栈闸门 + analyze + verify"]
+    end
+    subgraph L1 [L1 现有精选]
+        R["brainstorming / first-principles / tdd / to-prd / diagnose / chrome-devtools-cli"]
+    end
+    subgraph L2 [L2 通用增强 · 全项目]
+        G["security / performance / code_review / adversarial_review / parallel_execution / handoff(meta)"]
+    end
+    subgraph L2D [L2 专业领域 · 条件维度,when 命中才挂]
+        D["ux_design / api_design / frontend_ui / source_grounding / data_modeling / documentation_adr / data_migration / ai_integration / observability / gcp_runtime"]
+    end
+    SK --> R --> L2
+    GATE["技术栈闸门确认形态/栈"] --> L2D
+    L2 -.->|"仅 enrich,不夺权"| SK
+    L2D -.->|"when 命中"| SK
+          </pre>
+        </div>
+
+        <p><strong>冲突裁决优先级</strong>（高 → 低）：<code>Spec Kit 阶段门 &gt; constitution &gt; registry 维度 skill &gt; 外部 skill 默认行为</code>。外部 skill <strong>不得</strong>覆盖/降低 <code>verify</code> 可执行 DoD、技术栈闸门、模型路由；子 agent 自我汇报<strong>不算</strong>验收证据。</p>
+
+        <table>
+          <thead>
+            <tr><th>维度</th><th>skill</th><th>来源</th><th>阶段 / 触发</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>security</td><td>security-and-hardening</td><td>Addy</td><td>plan, implement</td></tr>
+            <tr><td>performance</td><td>performance-optimization</td><td>Addy</td><td>plan, verify</td></tr>
+            <tr><td>code_review</td><td>code-review-and-quality</td><td>Addy</td><td>implement</td></tr>
+            <tr><td>adversarial_review</td><td>doubt-driven-development</td><td>Addy</td><td>analyze, implement</td></tr>
+            <tr><td>parallel_execution</td><td>subagent-driven-development (+ worktrees)</td><td>Superpowers</td><td>implement</td></tr>
+            <tr><td>session_handoff</td><td>handoff</td><td>Matt</td><td>meta（/handoff 触发）</td></tr>
+            <tr><td>ux_design</td><td>visual-brainstorming</td><td>Superpowers</td><td>specify/clarify · <code>when</code> 有 UI</td></tr>
+            <tr><td>api_design</td><td>api-and-interface-design</td><td>Addy</td><td>plan/tasks/implement · <code>when</code> 后端</td></tr>
+            <tr><td>frontend_ui</td><td>frontend-ui-engineering</td><td>Addy</td><td>plan/tasks/implement · <code>when</code> 前端</td></tr>
+            <tr><td>source_grounding</td><td>source-driven-development</td><td>Addy</td><td>implement · <code>when</code> 重依赖框架</td></tr>
+            <tr><td>data_modeling</td><td>data-modeling（自编）</td><td>authored</td><td>plan/tasks/implement · <code>when</code> 需持久化</td></tr>
+            <tr><td>documentation_adr</td><td>documentation-and-adrs</td><td>Addy</td><td>plan/implement · <code>when</code> 有架构决策</td></tr>
+            <tr><td>data_migration</td><td>deprecation-and-migration</td><td>Addy</td><td>plan/implement · <code>when</code> 迁移/下线</td></tr>
+            <tr><td>ai_integration</td><td>gemini-api（本机·偏 Vertex）</td><td>local</td><td>plan/tasks/implement · <code>when</code> 接 LLM</td></tr>
+            <tr><td>observability</td><td>networking-observability（本机·偏 GCP）</td><td>local</td><td>plan/implement · <code>when</code> 需监控</td></tr>
+            <tr><td>gcp_runtime</td><td>cloud-run-basics（+ 同族）</td><td>local</td><td>plan/tasks/implement · <code>when</code> GCP 栈</td></tr>
+          </tbody>
+        </table>
+        <p class="callout">外部候选先入 <code>.cursor/quarantine/</code> 审查（来源见 <code>SOURCES.md</code>、审查见 <code>REVIEW.md</code>），通过后提级到 <code>.cursor/skills/</code> 并以 <code>source: discovered</code> + <code>origin</code> 登记。<code>data_modeling</code> 无现成 skill，按缺口路径现场编写（<code>origin: authored</code>）。</p>
+      </section>
+
+      <section id="fallback">
+        <h2>6. 能力层：缺口处理（用户闸门 + 三层降级）</h2>
+        <p>当某阶段在注册表中<strong>找不到对应维度的 skill</strong> 时，<strong>必须先暂停并询问用户</strong>，不得由 AI 自行判断是否进入降级或联网。只有用户明确说「不需要专门 skill」后，才进入三层降级；用户说「需要」则走补全路径。</p>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+flowchart TB
+    Q{"注册表命中?"}
+    Q -->|是| USE["使用本地 skill"]
+    Q -->|否| ASK["用户闸门 · 必问\n「X 维度缺 skill，是否需要专门 skill？」"]
+    ASK -->|需要| SUP["补全路径\n联网发现 / 用户指定 / 手动登记"]
+    SUP --> REG2[("固化进注册表")]
+    ASK -->|不需要| L1
+    L1["第1层 · 泛化兜底\n通用 skill + Opus 自带知识"]
+    L1 -->|够用| USE2["直接执行本阶段"]
+    L1 -->|不够| L2
+    L2["第2层 · 现场生成临时内联约束\nOpus 当场生成 checklist"]
+    L2 -->|够用| USE3["执行本阶段"]
+    L2 -->|仍不够| L3
+    L3["第3层 · 缺口驱动联网补全\n再次暂停→审查门→固化"]
+    L3 --> REG2
+          </pre>
+        </div>
+
+        <h3>前置 · 用户闸门（必做，不可跳过）</h3>
+        <p>注册表未命中时，编排层<strong>立即暂停</strong>并向用户说明：当前阶段、缺失的维度、可选后果。典型提问：</p>
+        <blockquote style="margin:1rem 0;padding:0.75rem 1rem;background:#f4f4f5;border-left:4px solid var(--accent);border-radius:0 var(--radius) var(--radius) 0;font-size:0.9rem;color:#444;">
+          「<em>{维度名}</em> 维度在注册表中没有对应 skill。是否需要为此项目引入<strong>专门 skill</strong>？」
+        </blockquote>
+        <ul>
+          <li><strong>用户答「需要」</strong> → 进入<strong>补全路径</strong>（见下），<strong>不进入</strong>三层降级。</li>
+          <li><strong>用户答「不需要」</strong> → 才进入<strong>三层降级</strong>（第 1→2→3 层）。</li>
+        </ul>
+        <p class="callout callout-info"><strong>原则：</strong>「要不要专门 skill」是产品/质量判断，归用户；「怎么在没有专门 skill 时兜底」归三层降级。AI 不得替用户做前者。</p>
+
+        <h3>分支 A · 用户确认需要专门 skill → 补全路径</h3>
+        <p>用户已表态需要专门能力时，直接走补全，跳过泛化兜底与临时约束：</p>
+        <ol>
+          <li>再次确认来源偏好（联网发现 / 用户提供路径 / 现场编写后登记）。</li>
+          <li>若联网：走审查门 + 隔离区 + 降权（见四道护栏）。</li>
+          <li>通过后写入 <code>registry.yaml</code>（<code>source: discovered</code> 或 <code>local</code>），本阶段及后续同维度直接命中。</li>
+        </ol>
+
+        <h3>分支 B · 用户确认不需要专门 skill → 三层降级</h3>
+        <p>仅在此分支下启用下列三层，<strong>能不联网就不联网</strong>：</p>
+
+        <h4>第 1 层 · 泛化兜底</h4>
+        <p>用已有通用 skill（<code>first-principles</code>、<code>brainstorming</code>、<code>tdd</code>）+ Opus 领域知识完成本阶段，不引入新 skill。</p>
+
+        <h4>第 2 层 · 现场生成临时内联约束</h4>
+        <p>第 1 层仍不够时，由 Opus <strong>当场生成一次性 checklist</strong> 注入本阶段。可控、可复现；默认不写入注册表（除非同一维度反复出现）。</p>
+
+        <h4>第 3 层 · 降级链上的联网补全（最后手段）</h4>
+        <p>用户已说「不需要专门 skill」，但第 1、2 层仍无法保证该维度质量时，<strong>再次暂停</strong>，说明「降级已用尽，是否同意为此次联网补全」；同意后才联网。与分支 A 的区别：这里联网是<strong>降级失败后的例外</strong>，不是用户一开始就要的专门 skill。</p>
+
+        <h3>对比：运行时自动联网（已否决） vs 本设计</h3>
+        <p>分支 A 与分支 B 第 3 层均可能联网，但触发条件不同：</p>
+        <table>
+          <thead>
+            <tr>
+              <th>维度</th>
+              <th class="compare-bad">运行时自动联网（已否决）</th>
+              <th class="compare-good">缺口驱动补全（采用）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>触发</td>
+              <td class="compare-bad">每次、自动、无人值守</td>
+              <td class="compare-good">仅真缺口，<strong>暂停并请用户放行</strong></td>
+            </tr>
+            <tr>
+              <td>信任</td>
+              <td class="compare-bad">直接注入即用</td>
+              <td class="compare-good">先过<strong>审查门</strong></td>
+            </tr>
+            <tr>
+              <td>处置</td>
+              <td class="compare-bad">用完即弃</td>
+              <td class="compare-good"><strong>审查通过后固化进注册表</strong></td>
+            </tr>
+            <tr>
+              <td>趋势</td>
+              <td class="compare-bad">永远不可控</td>
+              <td class="compare-good"><strong>注册表收敛，联网频率趋近于 0</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p><strong>四道护栏</strong>（适用于一切联网/补全，含分支 A 与分支 B 第 3 层）：</p>
+        <ol>
+          <li><strong>用户闸门优先</strong>：未命中注册表时，先问「要不要专门 skill」；降级链上的联网须二次确认。</li>
+          <li><strong>可信源优先</strong>：优先官方 / 高星 / 已知来源；标注出处。</li>
+          <li><strong>审查门 + 降权</strong>：候选先进隔离区，仅作为「参考资料」降权注入，<strong>不以可执行指令身份运行</strong>；经评分与人工确认后才提级。</li>
+          <li><strong>固化复用</strong>：通过后写入 <code>.cursor/registry.yaml</code>（<code>source: discovered</code>）并打标签，下次同维度直接命中本地，不再联网。</li>
+        </ol>
+        <p class="callout"><strong>收敛性：</strong>每次缺口都是一次性补全注册表的机会。随使用注册表趋于完整，联网频率自然趋近于零。</p>
+      </section>
+
+      <section id="routing">
+        <h2>7. 执行层：分层模型路由</h2>
+        <h3>7.1 核心规则</h3>
+        <p><strong>按任务难度而非死板按阶段切换。</strong> 默认遵循：</p>
+        <ul>
+          <li><strong>前期（理解 + 设计）→ Opus</strong>：<code>constitution</code> / <code>specify</code> / <code>clarify</code> / <code>plan</code> / <code>analyze</code> / <code>tasks</code></li>
+          <li><strong>后期（执行）→ Composer</strong>：<code>implement</code> 默认用快模型。</li>
+          <li><strong>卡住升级</strong>：<code>implement</code> 阶段遇到难调试、架构需返工、或同一任务连续失败时，<strong>临时升回 Opus</strong>，解决后降回 Composer。</li>
+        </ul>
+
+        <h3>7.2 路由表</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>任务类型</th>
+              <th>默认模型</th>
+              <th>升级条件</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>需求理解 / 澄清</td><td><span class="badge badge-opus">Opus</span></td><td>—</td></tr>
+            <tr><td>架构 / 数据模型 / 接口设计</td><td><span class="badge badge-opus">Opus</span></td><td>—</td></tr>
+            <tr><td>一致性分析、风险评审</td><td><span class="badge badge-opus">Opus</span></td><td>—</td></tr>
+            <tr><td>任务拆解</td><td><span class="badge badge-opus">Opus</span></td><td>—</td></tr>
+            <tr><td>常规代码实现</td><td><span class="badge badge-comp">Composer</span></td><td>连续失败 / 跨模块重构 → Opus</td></tr>
+            <tr><td>测试编写</td><td><span class="badge badge-comp">Composer</span></td><td>复杂测试设计 → Opus</td></tr>
+            <tr><td>疑难调试</td><td><span class="badge badge-opus">Opus</span></td><td>—</td></tr>
+          </tbody>
+        </table>
+
+        <h3>7.3 落地方式</h3>
+        <p>路由规则写入 <code>constitution</code>，作为全局约定；执行时由编排层在每个任务前声明算力档位（<code>reasoning</code> / <code>fast</code>），并允许「失败即升级」。</p>
+      </section>
+
+      <section id="quality">
+        <h2>8. 质量红线（自动补齐，不询问用户）</h2>
+        <ul>
+          <li><strong>零模糊点</strong>：<code>spec.md</code> 中不得残留 <code>[NEEDS CLARIFICATION]</code> 才能进入 <code>plan</code>。</li>
+          <li><strong>技术栈已确认</strong>：未经用户确认技术栈/架构方向（形态/登录/持久化/运行方式/框架），不得进入 <code>plan</code>；禁止默默写进 Assumptions。</li>
+          <li><strong>功能不漏</strong>：<code>analyze</code> 阶段交叉核对 spec 中每条用户故事在 plan / tasks 中均有落点。</li>
+          <li><strong>运行方式可行</strong>：<code>analyze</code> 阶段核对技术选型与承诺的运行/部署方式相容（如 ES Module 不能承诺 <code>file://</code> 双击）。</li>
+          <li><strong>验证而非声称</strong>：未过 <code>verify</code> 阶段可执行 DoD 的产物，一律视为未完成。</li>
+          <li><strong>一致性优先</strong>：新模块与既有术语、交互、数据模型保持一致。</li>
+          <li><strong>可复现</strong>：构建过程不依赖运行时不可控的外部输入（联网补全须经固化）。</li>
+          <li><strong>可回滚</strong>：不可逆改动（数据迁移、破坏性变更）须先有回滚方案。</li>
+        </ul>
+        <h3>verify 阶段 · 可执行 DoD（逐条留证据，缺一不可）</h3>
+        <p class="callout callout-info">
+          implement 之后必经 <code>verify</code>，激活 <code>verification</code> 维度（主选 <code>chrome-devtools-cli</code>，纯 shell 驱动、不依赖 MCP；降级 MCP 版），
+          由编排层<strong>亲自</strong>执行，<strong>不收子agent自我汇报</strong>：
+        </p>
+        <ol>
+          <li><strong>真启动</strong>：用 plan 承诺的方式实际跑起来。</li>
+          <li><strong>零报错</strong>：console 无 error（抓「空白页」类问题）。</li>
+          <li><strong>验收全过</strong>：spec 每条 Acceptance Scenario 实跑一遍。</li>
+          <li><strong>三态可见</strong>：空 / 加载 / 错误态确认存在（截图取证）。</li>
+          <li><strong>UX 红线</strong>：交互形态符合 plan（该弹窗不内联）、关键流程（如登录）在位。</li>
+          <li><strong>无残留</strong>：无 TODO / stub / 空函数。</li>
+          <li><strong>测试真跑</strong>：声称的测试实际运行并通过。</li>
+        </ol>
+        <p>任一未过 → 回 implement 修复后<strong>重跑 verify</strong>；证据写入特性目录 <code>verify.md</code>。</p>
+      </section>
+
+      <section id="dirs">
+        <h2>9. 目录结构</h2>
+        <pre><code>workflow/
+├── ARCHITECTURE.html              # 本文档
+├── .specify/                      # Spec Kit 工作区
+│   ├── memory/
+│   │   ├── constitution.md        # 全局原则 + 模型路由 + 质量红线（v1.4.0）
+│   │   └── verify-profiles.md     # 按 form 的 DoD 档位（web/cli/service/library/pipeline）
+│   ├── scripts/bash/              # 可执行门（退出码即真相）
+│   │   ├── gate-clarify.sh        #   进 plan 前：spec 无残留模糊点
+│   │   ├── gate-stack.sh          #   stack.yml 存在且 confirmed
+│   │   ├── gate-analyze.sh        #   聚合一致性 / 覆盖 / 维度路径
+│   │   ├── gate-verify.sh         #   跑 verify.yml + 扫残留 + 选 DoD 档
+│   │   └── activate-dimensions.sh #   读 stack.yml 确定性激活条件维度
+│   ├── templates/
+│   │   └── stack-template.yml      # 技术栈闸门产物模板（机器可读）
+│   └── specs/                     # 各特性产物（含 stack.yml / verify.yml / verify.md）
+└── .cursor/
+    ├── commands/                  # /speckit.* 命令
+    │   ├── speckit.constitution.md
+    │   ├── speckit.specify.md
+    │   ├── speckit.clarify.md
+    │   ├── speckit.plan.md
+    │   ├── speckit.analyze.md
+    │   ├── speckit.tasks.md
+    │   └── speckit.implement.md
+    ├── skills/                    # 本地精选 + 增强层固化 skill
+    │   ├── speckit-*/             #   编排命令 skill
+    │   ├── security-and-hardening/ … #  增强层（Addy/Superpowers 提级）
+    │   ├── visual-brainstorming/  #   ux_design（Superpowers visual companion）
+    │   ├── data-modeling/         #   自编（authored）
+    │   └── handoff/               #   跨会话传话（Matt）
+    ├── registry.yaml              # 维度 → skill 映射（7 基础 + 6 通用增强 + 10 条件领域）
+    ├── quarantine/                # 联网候选隔离区（SOURCES.md / REVIEW.md + 来源子目录）
+    └── rules/
+        ├── workflow-orchestration.mdc  # 阶段编排 + 增强层（非替换）
+        └── specify-rules.mdc      # Spec Kit 生成的上下文指引</code></pre>
+      </section>
+
+      <section id="deploy">
+        <h2>10. 落地步骤</h2>
+        <ol class="steps">
+          <li><strong>装编排骨架</strong>：用 Spec Kit 初始化 Cursor 命令与目录。
+            <pre><code>uvx --from git+https://github.com/github/spec-kit.git specify init --here --ai cursor</code></pre>
+          </li>
+          <li><strong>建注册表</strong>：创建 <code>.cursor/registry.yaml</code>，登记已有本地 skill（<code>brainstorming</code> / <code>first-principles</code> / <code>tdd</code> / <code>to-prd</code>）。</li>
+          <li><strong>写宪法</strong>：在 <code>constitution</code> 中固化「模型路由规则 + 质量红线 + 维度激活规则」。</li>
+          <li><strong>接缺口处理</strong>：在各阶段命令中加入「查表 → 用户闸门 →（不需要才）三层降级 /（需要则）补全路径」，并建好 <code>quarantine/</code>。</li>
+          <li><strong>试跑</strong>：用一个真实需求跑完整条流水线，验证缺口降级与模型路由是否按预期工作。</li>
+        </ol>
+      </section>
+
+      <section id="risks">
+        <h2>11. 风险与缓解</h2>
+        <table>
+          <thead>
+            <tr><th>风险</th><th>缓解</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>联网补全引入未审查指令（注入）</td><td>隔离区 + 降权为参考资料 + 人工放行 + 审查门</td></tr>
+            <tr><td>构建不可复现</td><td>联网产物必须固化进注册表后才正式使用</td></tr>
+            <tr><td>注册表初期覆盖不足</td><td>用户闸门确认方向 + 第 1/2 层兜底 + 按需补全（收敛）</td></tr>
+            <tr><td>Composer 在难任务上失败</td><td>失败即升级回 Opus</td></tr>
+            <tr><td>流程比「一句话直出」慢</td><td>简单需求走快速通道（specify→tasks→implement）</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="summary">
+        <h2>12. 一句话总结</h2>
+        <p class="summary">
+          <strong>Spec Kit</strong> 当总指挥定顺序；<strong>本地注册表</strong>定「谁来保证质量」，未命中时<strong>先问用户要不要专门 skill</strong>，不要才三层降级、要则走补全并固化；<strong>模型路由</strong>让强模型管思考、快模型管干活。三者合一，把「一句模糊需求」稳定、可控地变成「成熟产品」。
+        </p>
+      </section>
+
+      <footer class="doc-footer">
+        workflow · Spec-Driven 产品工作流架构 · 2026-06-02
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "neutral",
+      flowchart: { curve: "basis", padding: 16 },
+      securityLevel: "loose"
+    });
+  </script>
+</body>
+</html>

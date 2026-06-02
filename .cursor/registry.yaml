@@ -1,0 +1,286 @@
+# Spec-Driven 工作流 · 精选 Skill 注册表
+# 维度 → skill 的显式映射。编排层在每个阶段按维度查表激活对应 skill。
+# 未命中时：先问用户「是否需要专门 skill」，详见 .cursor/rules/workflow-orchestration.mdc
+version: 1
+updated: 2026-06-02
+
+# source 取值：
+#   local      手工精选，路径指向本机已安装的 skill
+#   discovered 联网补全后经审查固化（来源记录在 origin 字段）
+# bind_phase：该维度在哪些 Spec Kit 阶段被激活
+#   可选值 specify / clarify / plan / analyze / tasks / implement / verify / constitution
+#
+# 渐进披露（progressive disclosure）：
+#   summary  = L1，一行 what+when，命中即注入（便宜）
+#   path     = L2，全文 SKILL.md，仅当本阶段确需细则时再 Read（贵）
+#   细则附件 = L3，skill 内 references/，按需再下钻
+#
+# activate_if：机器可读激活条件（仅条件维度有）。元素语义：
+#   bareFlag   -> stack.yml[bareFlag] 为真才激活（如 backend / ui）
+#   key=value  -> stack.yml[key] 等于 value 才激活（如 cloud=gcp）
+#   全部满足（AND）才激活。由 .specify/scripts/bash/activate-dimensions.sh 判定。
+#   when 字段保留作人类可读说明，不参与机器判定。
+
+dimensions:
+  requirements:
+    desc: 需求挖掘与意图澄清
+    summary: "需求挖掘/意图澄清：specify·clarify 阶段把模糊想法逼成明确需求。"
+    skill: brainstorming
+    path: /Users/kevinx/.claude/skills/brainstorming/SKILL.md
+    source: local
+    reviewed: 2026-06-02
+    bind_phase: [specify, clarify]
+
+  product_taste:
+    desc: 第一性原理 / 取舍 / 砍需求 / 品味把控
+    summary: "第一性原理/砍需求/品味：specify·clarify·plan·analyze 否决derivative工作。"
+    skill: first-principles
+    path: /Users/kevinx/.cursor/skills/first-principles/SKILL.md
+    source: local
+    reviewed: 2026-06-02
+    bind_phase: [specify, clarify, plan, analyze]
+
+  quality:
+    desc: 测试先行与质量保障
+    summary: "测试先行(TDD)：plan 设计测试、implement 红绿重构。"
+    skill: test-driven-development
+    path: /Users/kevinx/.cursor/skills/test-driven-development/SKILL.md
+    source: local
+    reviewed: 2026-06-02
+    bind_phase: [plan, implement]
+
+  spec_normalization:
+    desc: 把需求规范化为结构化 PRD / spec
+    summary: "需求→结构化 PRD/spec：specify 阶段规范化产出。"
+    skill: to-prd
+    path: /Users/kevinx/.agents/skills/to-prd/SKILL.md
+    source: local
+    reviewed: 2026-06-02
+    bind_phase: [specify]
+
+  debugging:
+    desc: 疑难 bug 与性能回归的纪律化诊断
+    summary: "纪律化诊断：implement 期复现→最小化→定位疑难 bug/性能回归。"
+    skill: diagnose
+    path: /Users/kevinx/.agents/skills/diagnose/SKILL.md
+    source: local
+    reviewed: 2026-06-02
+    bind_phase: [implement]
+
+  architecture:
+    desc: 架构改进 / 解耦 / 可测试性
+    summary: "架构改进/解耦/可测试性：plan 期识别深化机会。"
+    skill: improve-codebase-architecture
+    path: /Users/kevinx/.agents/skills/improve-codebase-architecture/SKILL.md
+    source: local
+    reviewed: 2026-06-02
+    bind_phase: [plan]
+
+  verification:
+    desc: 真运行验证 / 浏览器自动化 / 抓 console 报错 / 验收场景执行 / 截图取证
+    summary: "真运行验证：verify 期启动产物、抓 console、跑验收场景、截图取证。"
+    # 主选 CLI：纯 shell 驱动，不依赖 MCP 配置，编排层用 Shell 直接调用更可靠
+    skill: chrome-devtools-cli
+    path: /Users/kevinx/.claude/skills/chrome-devtools-cli/SKILL.md
+    # 降级：MCP 版（需已配置 MCP 服务器）
+    fallback_skill: chrome-devtools
+    fallback_path: /Users/kevinx/.claude/skills/chrome-devtools/SKILL.md
+    source: local
+    reviewed: 2026-06-02
+    bind_phase: [verify]
+
+# ========================================================================
+# 增强层（Enhancement Layer · 非替换）
+# 来源：addyosmani/agent-skills、obra/superpowers、mattpocock/skills。
+# 经 .cursor/quarantine 审查后固化（见 quarantine/SOURCES.md、REVIEW.md）。
+# 冲突裁决优先级：Spec Kit 阶段门 > constitution > registry 维度 > 外部 skill 默认。
+# 外部 skill 不得覆盖/降低 verify 可执行 DoD、技术栈闸门、模型路由。
+# ========================================================================
+
+# —— 通用增强维度（全项目） ——
+  security:
+    desc: 安全加固 / OWASP / 鉴权 / 密钥与依赖审计
+    summary: "安全加固：plan·implement 期强制 OWASP/鉴权/密钥/依赖审计。"
+    skill: security-and-hardening
+    path: /Users/kevinx/projects/workflow/.cursor/skills/security-and-hardening/SKILL.md
+    source: discovered
+    origin: addyosmani/agent-skills@6ce0298
+    reviewed: 2026-06-02
+    bind_phase: [plan, implement]
+
+  performance:
+    desc: 性能优化 / Core Web Vitals / profiling / 包体分析
+    summary: "性能优化：plan·verify 期看 Core Web Vitals/profiling/包体。"
+    skill: performance-optimization
+    path: /Users/kevinx/projects/workflow/.cursor/skills/performance-optimization/SKILL.md
+    source: discovered
+    origin: addyosmani/agent-skills@6ce0298
+    reviewed: 2026-06-02
+    bind_phase: [plan, verify]
+
+  code_review:
+    desc: 任务间代码评审 / 五轴 / 变更粒度 / 严重度分级
+    summary: "代码评审：implement 任务间五轴评审/变更粒度/严重度分级。"
+    skill: code-review-and-quality
+    path: /Users/kevinx/projects/workflow/.cursor/skills/code-review-and-quality/SKILL.md
+    source: discovered
+    origin: addyosmani/agent-skills@6ce0298
+    reviewed: 2026-06-02
+    bind_phase: [implement]
+
+  adversarial_review:
+    desc: 对抗式复核（CLAIM→DOUBT→RECONCILE），高 stakes 决策当场质疑
+    summary: "对抗式复核：analyze·implement 期对高 stakes 决策 CLAIM→DOUBT→RECONCILE。"
+    skill: doubt-driven-development
+    path: /Users/kevinx/projects/workflow/.cursor/skills/doubt-driven-development/SKILL.md
+    source: discovered
+    origin: addyosmani/agent-skills@6ce0298
+    reviewed: 2026-06-02
+    bind_phase: [analyze, implement]
+
+  parallel_execution:
+    desc: 子 agent 驱动开发 + 两阶段 review（不替代 verify，子 agent 自报不算验收）
+    summary: "子 agent 并行开发：implement 期分派+两阶段 review;自报不算验收。"
+    skill: subagent-driven-development
+    path: /Users/kevinx/projects/workflow/.cursor/skills/subagent-driven-development/SKILL.md
+    companion_skill: using-git-worktrees
+    companion_path: /Users/kevinx/projects/workflow/.cursor/skills/using-git-worktrees/SKILL.md
+    source: discovered
+    origin: obra/superpowers@6fd4507
+    reviewed: 2026-06-02
+    bind_phase: [implement]
+
+  session_handoff:
+    desc: 跨会话压缩上下文，指向已有 spec/plan/tasks（只指针不复制），建议下一会话 skill
+    summary: "跨会话交接：仅 /handoff 或显式触发,压缩上下文指向 spec/plan/tasks。"
+    skill: handoff
+    path: /Users/kevinx/projects/workflow/.cursor/skills/handoff/SKILL.md
+    source: discovered
+    origin: mattpocock/skills@aaf2453
+    reviewed: 2026-06-02
+    meta: true            # 仅用户 /handoff 或显式 @ 触发，不自动绑阶段
+    bind_phase: []
+
+# —— 专业领域 · 条件维度（activate_if 命中才激活；技术栈闸门写 stack.yml 后挂载） ——
+  ux_design:
+    desc: UI/UX 可视化共创，浏览器 mockup 让用户看着选
+    summary: "UI/UX 可视化共创：specify·clarify 期用 HTML mockup 让用户看着选。"
+    skill: visual-brainstorming
+    path: /Users/kevinx/projects/workflow/.cursor/skills/visual-brainstorming/SKILL.md
+    source: discovered
+    origin: obra/superpowers@6fd4507 (brainstorming visual companion)
+    reviewed: 2026-06-02
+    when: "有 UI / 界面 / 交互设计需求"
+    activate_if: [ui]
+    bind_phase: [specify, clarify]
+
+  api_design:
+    desc: API/接口契约优先设计 / Hyrum's Law / 错误语义 / 边界校验
+    summary: "API 契约优先：plan·tasks·implement 期设计接口/错误语义/边界。"
+    skill: api-and-interface-design
+    path: /Users/kevinx/projects/workflow/.cursor/skills/api-and-interface-design/SKILL.md
+    source: discovered
+    origin: addyosmani/agent-skills@6ce0298
+    reviewed: 2026-06-02
+    when: "栈含后端 / API / 服务边界"
+    activate_if: [backend]
+    bind_phase: [plan, tasks, implement]
+
+  frontend_ui:
+    desc: 前端工程 / 组件架构 / 设计系统 / 响应式 / WCAG 2.1 AA
+    summary: "前端工程：plan·tasks·implement 期组件架构/设计系统/响应式/WCAG。"
+    skill: frontend-ui-engineering
+    path: /Users/kevinx/projects/workflow/.cursor/skills/frontend-ui-engineering/SKILL.md
+    source: discovered
+    origin: addyosmani/agent-skills@6ce0298
+    reviewed: 2026-06-02
+    when: "栈含前端 / UI"
+    activate_if: [frontend]
+    bind_phase: [plan, tasks, implement]
+
+  source_grounding:
+    desc: 框架/库决策对照官方文档、引用出处、标注未验证
+    summary: "官方文档接地：implement 期框架 API 对照官方文档、引用出处、标注未验证。"
+    skill: source-driven-development
+    path: /Users/kevinx/projects/workflow/.cursor/skills/source-driven-development/SKILL.md
+    source: discovered
+    origin: addyosmani/agent-skills@6ce0298
+    reviewed: 2026-06-02
+    when: "项目重度依赖某框架 / 库"
+    activate_if: [heavy_framework]
+    bind_phase: [implement]
+    # 分工：source_grounding 管 implement 期框架 API 接地；
+    #       grill-with-docs 管 plan/analyze 期对 spec/plan/ADR 的拷问。
+
+  documentation_adr:
+    desc: 架构决策记录（ADR）/ API 文档 / 记录决策的 why
+    summary: "ADR/文档：plan·implement 期记录架构决策的 why、对外 API 文档。"
+    skill: documentation-and-adrs
+    path: /Users/kevinx/projects/workflow/.cursor/skills/documentation-and-adrs/SKILL.md
+    source: discovered
+    origin: addyosmani/agent-skills@6ce0298
+    reviewed: 2026-06-02
+    when: "有架构决策 / 对外 API / 需沉淀文档"
+    activate_if: [docs_needed]
+    bind_phase: [plan, implement]
+
+  data_migration:
+    desc: 迁移 / 废弃 / 僵尸代码清理 / code-as-liability
+    summary: "迁移/废弃：plan·implement 期迁移/下线旧系统/破坏性变更/清僵尸代码。"
+    skill: deprecation-and-migration
+    path: /Users/kevinx/projects/workflow/.cursor/skills/deprecation-and-migration/SKILL.md
+    source: discovered
+    origin: addyosmani/agent-skills@6ce0298
+    reviewed: 2026-06-02
+    when: "涉及数据迁移 / 下线旧系统 / 破坏性变更"
+    activate_if: [migration]
+    bind_phase: [plan, implement]
+
+  data_modeling:
+    desc: 数据建模 / 持久化 / schema / 索引 / 迁移 / 一致性（平台无关）
+    summary: "数据建模：plan·tasks·implement 期 schema/索引/迁移/一致性(平台无关)。"
+    skill: data-modeling
+    path: /Users/kevinx/projects/workflow/.cursor/skills/data-modeling/SKILL.md
+    source: local
+    origin: authored 2026-06-02
+    reviewed: 2026-06-02
+    when: "需要持久化 / 数据库 / schema"
+    activate_if: [persistence]
+    bind_phase: [plan, tasks, implement]
+
+  ai_integration:
+    desc: 接入大模型 / LLM（本机 gemini-api，偏 Vertex；非 GCP 栈走缺口闸门补通用）
+    summary: "LLM 接入：plan·tasks·implement 期接大模型(本机 gemini-api 偏 Vertex)。"
+    skill: gemini-api
+    path: /Users/kevinx/.agents/skills/gemini-api/SKILL.md
+    source: local
+    reviewed: 2026-06-02
+    when: "接入大模型 / LLM"
+    activate_if: [llm]
+    bind_phase: [plan, tasks, implement]
+
+  observability:
+    desc: 可观测性 / 监控 / 日志 / 指标（本机 recipe，偏 GCP；非 GCP 栈走缺口闸门补通用）
+    summary: "可观测性：plan·implement 期监控/日志/指标(本机 recipe 偏 GCP)。"
+    skill: google-cloud-recipe-networking-observability
+    path: /Users/kevinx/.agents/skills/google-cloud-recipe-networking-observability/SKILL.md
+    source: local
+    reviewed: 2026-06-02
+    when: "需要可观测性 / 监控"
+    activate_if: [observability]
+    bind_phase: [plan, implement]
+
+  gcp_runtime:
+    desc: GCP 运行/部署（Cloud Run 为主，gke/firebase/cloud-sql/bigquery 作 companion）
+    summary: "GCP 运行/部署：plan·tasks·implement 期 Cloud Run 为主的 GCP 部署。"
+    skill: cloud-run-basics
+    path: /Users/kevinx/.agents/skills/cloud-run-basics/SKILL.md
+    source: local
+    reviewed: 2026-06-02
+    when: "栈含 GCP（Cloud Run / GKE / Firebase / BigQuery …）"
+    activate_if: [cloud=gcp]
+    bind_phase: [plan, tasks, implement]
+
+# —— 按需补全占位区 ——
+# 长尾领域（如「支付安全」「实时通信」「移动端」「搜索」等）默认不预设，
+# 在首次缺口、且用户确认「需要专门 skill」后，由补全路径写入此处，并标注 source/origin/reviewed。

@@ -1,0 +1,4 @@
+# 特性产物目录（各项目 spec/plan/tasks 等，不纳入本仓版本库）
+specs/
+
+.DS_Store

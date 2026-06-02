@@ -1,0 +1,224 @@
+---
+alwaysApply: true
+---
+
+# 工作流编排规则（Spec-Driven Orchestration）
+
+本规则在所有 `/speckit-*` 阶段始终生效，与 `.specify/memory/constitution.md`、
+`.cursor/registry.yaml` 配合。完整设计见 `ARCHITECTURE.html`。
+
+## 每个阶段开始时（必做）
+
+1. **查表激活维度**：读取 `.cursor/registry.yaml`，找出 `bind_phase` 包含当前阶段
+   （specify / clarify / plan / analyze / tasks / implement / verify）的所有维度。
+   **先注入各维度的 `summary`（L1）**，按下方「渐进披露协议」决定是否再 `Read` 全文（L2），
+   然后执行 speckit 阶段逻辑。
+
+2. **命中即用**：维度在注册表中有 skill → 直接使用，不询问。
+
+   **specify 阶段特例（背景充分性闸门）**：用户若只给产品名/方向（如「做一个生产排产软件」）、
+   未给足背景/目标/成功标准，**禁止靠行业常识猜满一整份 spec**。必须先激活 `requirements`
+   （brainstorming）**一次一问**补齐背景，再起草；预想功能点当**待验证假设**而非定稿。
+   仅当背景充分或用户主动说「按你理解起草」时才直接写 spec。详见 `speckit-specify` 的
+   「Background-Sufficiency Gate」。
+
+3. **未命中 → 用户闸门（不可跳过）**：某个本应在本阶段发挥作用的维度
+   在注册表中没有对应 skill 时，**立即暂停**并问用户：
+   > 「{维度名} 维度在注册表中没有 skill。是否需要为本项目引入专门 skill？」
+   - 用户答「需要」→ 走【补全路径】，**不进入三层降级**。
+   - 用户答「不需要」→ 才走【三层降级】。
+   - 禁止由 AI 自行决定是否降级或联网。
+
+## 渐进披露协议（控指令稀释，命中维度不必全文加载）
+
+每个维度有三层信息，按需下钻，避免一上来把全部 SKILL.md 灌进上下文：
+
+1. **L1 = `summary`**（registry 内一行 what+when）：本阶段命中的维度**一律先只注入 summary**。
+   多维度同阶段（如全栈 plan 命中 5+ 维度）时，**默认只摘要**，不展开。
+2. **L2 = `path` 全文 SKILL.md**：**仅当本阶段确需该维度细则时**才 `Read` 全文——
+   判据：该维度是本步主线（如 implement 写 API → 读 `api_design`；verify → 读 `verification`），
+   或 L1 不足以正确执行该子步骤。读取保持「用时即读、读完即用」，不预读全部命中维度。
+3. **L3 = skill 内 `references/`**：仅当 L2 仍不够、需要具体清单/模板时再下钻。
+
+判定从简：**能用 L1 完成就停在 L1；拿不准该不该展开就先按 L1 执行，遇到具体决策再升 L2。**
+`meta: true` 的维度（如 `session_handoff`）不自动注入，仅用户显式触发时才读。
+
+## 补全路径（用户答“需要”）
+
+1. 确认来源偏好：联网发现 / 用户提供路径 / 现场编写后登记。
+2. 若联网：候选先写入 `.cursor/quarantine/`，仅作「参考资料」降权使用，
+   不以可执行指令身份运行；经评分与人工确认后才提级。
+3. 通过后登记进 `.cursor/registry.yaml`（含 source / origin / reviewed / bind_phase），
+   并在合适时移入 `.cursor/skills/`。此后同维度直接命中。
+
+## 三层降级（用户答“不需要”，能不联网就不联网）
+
+1. **泛化兜底**：用已登记的通用 skill（first-principles / brainstorming /
+   test-driven-development）+ Opus 领域知识完成本阶段，不引入新 skill。
+2. **现场临时约束**：第 1 层不足时，由 Opus 当场生成一次性 checklist 注入本阶段；
+   默认不写注册表（除非同一维度反复出现）。
+3. **降级链联网（最后手段）**：第 1、2 层仍无法保证质量时，**再次暂停**确认后才联网，
+   走与补全路径相同的隔离/审查/固化流程。
+
+## 增强层（Enhancement Layer · 非替换）
+
+注册表里来自 Addy Osmani / Superpowers / Matt Pocock 的维度是**增强**，只 enrich 某阶段
+子步骤，**不替代** Spec Kit 编排。规则如下：
+
+1. **冲突裁决优先级**（高 → 低）：
+   **Spec Kit 阶段门 > constitution > registry 维度 skill > 外部 skill 默认行为 > 全局偏好**。
+   外部 skill 与上位规则冲突时，一律服从上位。
+   **全局偏好**（User Rules / Team Rules / `AGENTS.md` / Cursor & Copilot Memories）处于最低优先级，
+   且受下方「环境隔离闸门」管控，默认不采纳。
+2. **硬约束**：外部 skill **不得**覆盖或降低 `verify` 可执行 DoD、技术栈闸门、模型路由。
+   - `subagent-driven-development`（parallel_execution）的子 agent 两阶段 review **不替代** verify；
+     子 agent 自我汇报**仍不算**验收证据（呼应「不接受自我汇报」）。
+3. **条件维度激活**：领域维度（`ux_design` / `api_design` / `frontend_ui` / `source_grounding`
+   / `gcp_runtime` / `data_modeling` / `documentation_adr` / `data_migration` / `ai_integration`
+   / `observability`）带 `when:`，**默认休眠**，只在命中条件后激活：
+   - `ux_design` 由 specify/clarify「是否有 UI 需求」触发；其余由 plan **技术栈闸门**的结论触发。
+   - 同时命中多个（如全栈 `api_design` + `frontend_ui`）→ 并行挂载，各管子步骤，不互相覆盖。
+   - 平台特化提示：`ai_integration`(偏 Vertex) / `observability`(偏 GCP) 命中但栈非 GCP 时，
+     走缺口闸门补通用 skill，不强行套用。
+4. **`source_grounding` vs `grill-with-docs` 分工**：前者 implement 期对**框架/库 API** 查官方文档；
+   后者 plan/analyze 期对 **spec/plan/ADR 决策**做拷问。阶段与对象不同，不竞争。
+5. **`session_handoff`（handoff）用法**（meta，仅用户 `/handoff` 或显式 @ 触发，不自动绑阶段）：
+   - 写到 **OS 临时目录**，不进仓库；
+   - **只指针不复制**：引用 `spec.md` / `plan.md` / `tasks.md` / `verify.md` 路径，不重抄内容；
+   - **不得替代 verify 证据**：下一会话仍须真跑 DoD；
+   - 阶段衔接建议：clarify/grill→plan、plan→implement、implement→verify 时在文档里给 suggested skills。
+
+## 环境隔离闸门（Context Isolation Gate · specify 起始必做，防全局偏好污染）
+
+全局偏好常驻且跨项目，处冲突裁决链**最低优先级**；为防其稀释本工作流，**specify 起始**先过此闸门：
+
+1. **检测来源**：扫描并向用户列出本次可能生效的全局偏好来源（存在哪些就列哪些）：
+   - Cursor **User Rules / Team Rules**（设置内全局规则）
+   - 项目根或子目录的 **`AGENTS.md`**
+   - **Cursor Memories**（对话学习沉淀）/ **Copilot 用户级 memories**（`/memories/` 偏好）
+2. **一次确认（不替用户决定）**：问用户本特性如何处理，给三档：
+   > 「检测到以下全局偏好：{清单}。本特性如何处理？**忽略(默认隔离) / 选择性引入 / 全部引入**」
+   - 默认立场为 **隔离（ignore）**：用户未明确放行前一律不采纳。
+   - 用户答「选择性」→ 让其列明放行项。
+   - 任何档位下，全局偏好**都不得**覆盖上位规则（阶段门 / constitution / 维度 skill / verify DoD）。
+3. **记录决策**：写入 `FEATURE_DIR/stack.yml` 的 `global_prefs`（`ignore|selective|adopt`）与
+   `global_prefs_allow`（selective 时列明）。本特性后续阶段沿用，不重复打扰。
+4. **trivial 快速通道**：仍需记录 `global_prefs`，但若无检测到任何全局偏好来源，可默认 `ignore` 免打扰。
+
+> 与「背景充分性闸门」并列于 specify 起始：前者管"需求背景够不够"，本闸门管"外部上下文进不进"。
+
+## 复杂度分级与快速通道（Triage & Fast-Track）
+
+`specify` 起始给出复杂度并写入 `FEATURE_DIR/stack.yml` 的 `complexity`：
+
+- **trivial**（须全满足）：单一关注点、无登录、无超本地持久化、可回滚、不接外部 API、不引入新架构。
+- 任一不满足 → `standard`；涉及架构/迁移/多模块/不可逆 → `complex`。
+
+**trivial 快速通道**：跳过 clarify 提问（仍跑 `gate-clarify.sh` 自动扫描）、analyze 走轻量核对、
+技术栈沿用既有栈可免暂停（但 `stack.yml` 仍写明 `confirmed: true`）、**仍必过 verify 轻量档**。
+**standard/complex 走全流水线**。拿不准默认按更高档；用户可手动升降档。
+
+## 可执行门（先跑脚本，退出码即真相）
+
+关键质量项由 `.specify/scripts/bash/` 脚本机械判定，**非零即停、先于主观判断**：
+
+| 时机 | 脚本 | 作用 |
+|------|------|------|
+| 进 plan 前 | `gate-clarify.sh` | spec 无 `[NEEDS CLARIFICATION]`/TODO |
+| 进 plan/tasks/implement 前 | `gate-stack.sh` | `stack.yml` 存在、`confirmed: true`、有 `form` |
+| plan 后 / analyze | `activate-dimensions.sh` | 按 `stack.yml` 确定性输出该激活的条件维度 |
+| analyze | `gate-analyze.sh` | 聚合：无模糊点/栈已确认/故事有落点/维度路径可解析 |
+| implement 后 | `gate-verify.sh` | 跑 `verify.yml` 命令看退出码、扫残留、按 `form` 选 DoD 档 |
+
+门只判**可机械判定**项；主观质量仍由 Opus 判断，门与人工**互补**。
+
+## 运转日志（Run Log · 每阶段必写，供用户审计工作流是否符合预期）
+
+目的：让用户**事后核对**工作流的真实运转（何时、用了什么 skill/模型、跑了什么脚本、
+做了什么验证、产出什么）。日志落在 `FEATURE_DIR/run-log.md`，由 `.specify/scripts/bash/run-log.sh` 追加。
+**核心原则：分清"机械证据"与"自述"**——呼应红线「不接受自我汇报、验证而非声称」。
+
+- **GATE 行 = 机械证据（可信）**：4 个门脚本（`gate-clarify/stack/analyze/verify`）已挂 EXIT trap，
+  退出码由脚本自记，编排层无法篡改。无需手动写，跑门即自动落盘。
+- **PHASE 块 = 自述 + 产物机械核验**：每个 speckit 阶段（specify/clarify/plan/analyze/tasks/
+  implement/verify）**结束时，编排层必须调用一次**：
+  ```bash
+  .specify/scripts/bash/run-log.sh phase \
+    --phase <阶段名> \
+    --model <本阶段算力档,如 Opus/Composer> \
+    --skills "<本阶段激活的维度/skill,逗号分隔>" \
+    --scripts "<本阶段跑过的脚本,逗号分隔>" \
+    --artifacts "<本阶段应产出的文件/目录,逗号分隔,相对 FEATURE_DIR>" \
+    --note "<一句话:做了什么/验证了什么>"
+  ```
+  其中 `--model/--skills/--scripts/--note` 是**自述**（日志会标 `_(自述)_`，不作验收证据）；
+  `--artifacts` 由脚本**机械核验**文件是否真实存在并渲染 ✓/✗（这是该块唯一可信项）。
+
+**硬约束**：
+1. PHASE 块的自述项**不能替代 verify 证据**；verify 阶段仍须按可执行 DoD 真跑留证（写 `verify.md`）。
+2. 阶段结束未写 run-log = 该阶段未走完，不得进入下一阶段。
+3. `--artifacts` 必须如实填该阶段承诺的产物（如 plan → `plan.md,research.md`；
+   specify → `spec.md`；tasks → `tasks.md`），让 ✓/✗ 能机械暴露"声称写了但其实没写"。
+
+## 技术栈闸门（进入 plan 前必做，不可跳过）
+
+进入 `plan` 之前，**必须先暂停**与用户确认技术栈/架构方向（这是方向决策，归用户）：
+
+1. 摆出关键岔路：形态（纯前端/全栈/脚本）、是否登录、持久化与多端同步、
+   运行/部署方式（双击/本地 server/托管）、框架语言倾向。
+2. 用户给明确栈 → 采用；用户说「你定」→ 给出带理由的推荐，**仍需用户点头**后才写 plan。
+3. **禁止**把技术栈/架构默默写进 spec 的 Assumptions 一带而过。
+4. **运行方式可行性**：所选栈必须与承诺的运行方式相容
+   （如 ES Module ✗ `file://` 双击）；不相容则当场调整方案。
+5. **决定条件领域维度**：闸门确认的形态/栈**同时决定激活哪些条件维度**
+   （后端→`api_design`、前端→`frontend_ui`、需持久化→`data_modeling`、GCP→`gcp_runtime` 等）。
+
+`analyze` 阶段必须额外核对：技术栈已确认、运行/部署方式与选型相容。
+
+## analyze 硬 checklist（逐条核对，不自由发挥）
+
+analyze 阶段必须**逐条**核对以下项，任一失败则不放行：
+- [ ] 每条用户故事在 plan / tasks 中都有落点（功能不漏）
+- [ ] 术语 / 数据模型 / 交互与 spec、既有模块一致
+- [ ] spec 无残留 `[NEEDS CLARIFICATION]`，技术栈已确认
+- [ ] **运行方式可行**：技术选型与承诺的运行/部署方式相容（如 ES Module ✗ `file://` 双击）
+- [ ] 无矛盾项（如 SHOULD/MUST 冲突、字段缺失）
+- [ ] **条件领域维度激活与技术栈一致**：该挂的领域 skill（api/ui/data 等）已挂，无漏挂/误挂
+- [ ] 已识别移交 implement 的技术风险点
+
+## verify 阶段（implement 之后必做，不可跳过）
+
+「完成」= 被验证过真的能跑，**不接受子agent自我汇报**。**DoD 按产物形态选档**
+（见 `.specify/memory/verify-profiles.md`）：先跑 `gate-verify.sh`（跑 `verify.yml` 命令看退出码、
+按 `form` 选档、扫残留），再由编排层**亲自**补齐该档不可机械判定的人工验收项。
+web 档用 `verification` 维度（chrome-devtools-cli，纯 shell；降级 MCP）；其余形态用各自命令：
+
+1. **真启动**：用 plan 承诺的方式实际启动产物。
+2. **零报错**：打开后 console 无 error（抓"空白页"类问题）。
+3. **验收全过**：spec 每条 Acceptance Scenario 实跑一遍，记录结果。
+4. **三态可见**：空 / 加载 / 错误态确认存在（截图或描述）。
+5. **UX 红线**：交互形态符合 plan（该弹窗不内联）、关键流程（如登录）在位。
+6. **无残留**：grep 无 TODO / stub / 空函数。
+7. **测试真跑**：声称的测试实际运行并通过。
+
+任一未过 → 回 implement 修复后**重跑 verify**。证据写入特性目录 `verify.md`。
+
+## 模型路由（执行时声明算力档位）
+
+- 前期（constitution / specify / clarify / plan / analyze / tasks）→ Opus。
+- 实现（implement）→ 默认 Composer；遇难调试 / 架构返工 / 同任务连续失败 → 临时升 Opus。
+- **验证（verify）→ Opus**（验证是裁判，不能比被测对象更弱）。
+- 路由细节以 constitution 的「模型路由」表为准。
+
+## 质量门（阶段间硬约束）
+
+- 进入 `plan` 前：`spec.md` 不得残留 `[NEEDS CLARIFICATION]`，且**技术栈已与用户确认**。
+- 进入 `implement` 前：`analyze` 已确认 spec / plan / tasks 一致、功能无遗漏、运行方式可行。
+- `implement` 之后：**必须经 `verify` 阶段**，按可执行 DoD 逐条留证据后才算完成。
+- 最终完成判据：verify 的可执行 DoD 全过（真启动 / 零报错 / 验收全过 / 三态 / 无残留 / 测试真跑）。
+
+## 红线（自动补齐，不问用户）
+
+零模糊点 / 技术栈已确认 / 功能不漏 / 运行方式可行 / 验证而非声称 / 一致性优先 /
+能力固化（流程与能力集合可复现，**不承诺 LLM 逐字可复现**）/ 可回滚 /
+外科式变更（implement 期只改与任务直接相关的代码，不顺手重构/美化相邻代码，每行改动可追溯到需求）。

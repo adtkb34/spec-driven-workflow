@@ -1,0 +1,10 @@
+---
+alwaysApply: true
+---
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan at:
+`specs/002-markdown-notes-desktop/plan.md`
+Also see: `quickstart.md`, `data-model.md`, `contracts/`
+<!-- SPECKIT END -->

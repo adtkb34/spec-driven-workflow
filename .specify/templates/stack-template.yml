@@ -1,0 +1,47 @@
+# stack.yml — 技术栈闸门产物（机器可读）
+# 由 /speckit-plan 的「技术栈闸门」在与用户确认方向后写入 FEATURE_DIR/stack.yml。
+# 驱动两件事：
+#   1) gate-stack.sh 放行 plan/tasks/implement（需 confirmed: true）
+#   2) activate-dimensions.sh 按布尔标志/值激活条件维度（见 .cursor/registry.yaml）
+#
+# 字段为机器判定真相，务必如实填写；改栈需重新与用户确认并更新本文件。
+
+# 产物形态 —— 决定 verify DoD 档位（见 .specify/memory/verify-profiles.md）
+form: web            # web | cli | service | library | pipeline
+
+# 复杂度 —— 决定走快速通道还是全流水线（见 constitution「快速通道」）
+complexity: standard # trivial | standard | complex
+
+# —— 能力标志（true 即激活对应条件维度）——
+backend: false       # 有后端/API/服务边界 → 激活 api_design
+frontend: false      # 有前端/UI 工程        → 激活 frontend_ui
+ui: false            # 有界面/交互设计需求    → 激活 ux_design（可视化共创）
+persistence: false   # 需持久化/数据库/schema → 激活 data_modeling
+llm: false           # 接入大模型/LLM         → 激活 ai_integration
+migration: false     # 数据迁移/下线/破坏性变更 → 激活 data_migration
+observability: false # 需监控/日志/指标       → 激活 observability
+heavy_framework: false # 重度依赖某框架/库     → 激活 source_grounding
+docs_needed: false   # 有架构决策/对外 API/需沉淀文档 → 激活 documentation_adr
+
+# 云/运行时 —— cloud=gcp 时激活 gcp_runtime
+cloud: none          # none | gcp | aws | azure | other
+
+# 运行/部署方式 —— 必须与 form/栈相容（如 ES Module ✗ file:// 双击）
+run: ""              # 例：本地 dev server / 双击 html / docker / cloud run
+
+# 关键选型记录（人类可读，便于 analyze 与 ADR 追溯）
+notes: ""
+
+# —— 环境隔离决策（环境隔离闸门 · specify 起始与用户确认后写入）——
+# 决定全局偏好如何对待，避免污染本工作流。全局偏好来源包括：
+#   Cursor User Rules / Team Rules、项目根或子目录 AGENTS.md、Cursor Memories、Copilot 用户级 memories。
+# 取值：
+#   ignore    默认隔离：未经放行一律不采纳（推荐）
+#   selective 选择性引入：仅采纳 global_prefs_allow 列明项，其余忽略
+#   adopt     全部引入：全局偏好照常生效（仍服从冲突裁决：本工作流优先）
+global_prefs: ignore
+# selective 时在此列明放行的偏好（一行一条，人类可读）；ignore/adopt 时留空
+global_prefs_allow: []
+
+# 用户已点头确认（gate-stack.sh 校验此项）
+confirmed: false
