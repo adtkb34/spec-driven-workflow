@@ -76,6 +76,12 @@ AI 不得用「加开关让用户选」来回避本该自己定的实现细节�
 | UX / API / 前端**设计决策**（ux_design / api_design / frontend_ui，plan 期） | Opus | — |
 | 上述领域的**实现**（implement 期） | Composer | 连续失败 / 返工 → Opus |
 
+**运转日志中的「模型」字段**（与上表路由档分离）：
+- `run-log.sh phase --model` 必须填**本次对话实际模型 ID**（如 `gpt-4.1`），**禁止**把上表「Opus/Composer」
+  路由档名当日志值（Copilot 用 GPT 时写 Opus 即造假）。
+- 可 `export SPECKIT_MODEL='<实际模型>'`；省略 `--model` 时由脚本按 `SPECKIT_RUNTIME` / 环境推断。
+- Cursor → 填界面显示的模型；Copilot → 填所选 GPT 型号。
+
 ## 维度激活与缺口处理（Dimension Activation & Gap Handling）
 
 每个阶段开始时，编排层按 `.cursor/registry.yaml` 的 `bind_phase` 查表，
@@ -195,9 +201,10 @@ implement 完成后**必须**进入 `verify` 阶段（本工作流自有阶段�
 各阶段执行前应核对：是否遵守模型路由、是否触发用户闸门、是否过技术栈闸门、
 是否守住质量红线、是否通过 verify 阶段的可执行 DoD。
 
-**Version**: 1.6.0 | **Ratified**: 2026-06-02 | **Last Amended**: 2026-06-02
+**Version**: 1.6.1 | **Ratified**: 2026-06-02 | **Last Amended**: 2026-06-03
 <!-- v1.1.0: 新增「技术栈与运行方式闸门」+ 两条质量红线（技术栈已确认 / 运行方式可行） -->
 <!-- v1.6.0: 新增原则 VII「环境隔离」+ 冲突裁决链追加「全局偏好」最低优先级 + 环境隔离闸门（specify 起始，决策记入 stack.yml.global_prefs） -->
+<!-- v1.6.1: run-log --model 须记实际模型 ID,禁止用 Opus/Composer 路由档冒充;Copilot/GPT 与 Cursor 分记 -->
 <!-- v1.5.0: 新增质量红线「外科式变更」（吸收 andrej-karpathy-skills 的 Surgical Changes；其余 3 条已被 first-principles/clarify 闸门/TDD/verify 覆盖，不整体引入以免指令稀释） -->
 <!-- v1.2.0: 新增原则 II-bis「验证而非声称」+ verify 阶段与可执行 DoD + verification 维度 + 验证用 Opus -->
 <!-- v1.3.0: 新增原则 VI「增强而非替换」+ 增强层（Addy/Superpowers/Matt）6 通用 + 10 条件领域维度 + 冲突裁决 + 条件维度激活 + 模型路由补充 -->

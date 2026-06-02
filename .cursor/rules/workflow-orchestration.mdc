@@ -145,7 +145,7 @@ alwaysApply: true
   ```bash
   .specify/scripts/bash/run-log.sh phase \
     --phase <阶段名> \
-    --model <本阶段算力档,如 Opus/Composer> \
+    --model "<本次对话实际模型 ID>" \
     --skills "<本阶段激活的维度/skill,逗号分隔>" \
     --scripts "<本阶段跑过的脚本,逗号分隔>" \
     --artifacts "<本阶段应产出的文件/目录,逗号分隔,相对 FEATURE_DIR>" \
@@ -153,6 +153,13 @@ alwaysApply: true
   ```
   其中 `--model/--skills/--scripts/--note` 是**自述**（日志会标 `_(自述)_`，不作验收证据）；
   `--artifacts` 由脚本**机械核验**文件是否真实存在并渲染 ✓/✗（这是该块唯一可信项）。
+
+**`--model` 硬约束（防 Copilot/Cursor 混记）**：
+- 填**本次会话真实运行的模型标识**（如 `gpt-4.1`、`claude-opus-4-20250514`、`composer-2.5`），
+  **禁止**把下方「模型路由」里的档位名 `Opus`/`Composer` 直接写进日志——那是 Cursor 侧建议档，不是 Copilot 的 GPT。
+- **Copilot** → 填实际 GPT 型号；**Cursor** → 填界面/设置里显示的模型 ID。
+- 可省略 `--model`：脚本按 `SPECKIT_MODEL` 或环境推断；仍无法确定时标 `Copilot-GPT (推断…)` 并提示补全。
+- 可 `export SPECKIT_MODEL='gpt-4.1'` 或 `SPECKIT_RUNTIME=copilot` 固定本机默认值。
 
 **硬约束**：
 1. PHASE 块的自述项**不能替代 verify 证据**；verify 阶段仍须按可执行 DoD 真跑留证（写 `verify.md`）。
@@ -203,12 +210,18 @@ web 档用 `verification` 维度（chrome-devtools-cli，纯 shell；降级 MCP�
 
 任一未过 → 回 implement 修复后**重跑 verify**。证据写入特性目录 `verify.md`。
 
-## 模型路由（执行时声明算力档位）
+## 模型路由（算力档建议 · 与 run-log 的「实际模型」分离）
 
-- 前期（constitution / specify / clarify / plan / analyze / tasks）→ Opus。
-- 实现（implement）→ 默认 Composer；遇难调试 / 架构返工 / 同任务连续失败 → 临时升 Opus。
-- **验证（verify）→ Opus**（验证是裁判，不能比被测对象更弱）。
-- 路由细节以 constitution 的「模型路由」表为准。
+**路由**回答「该用多强的模型」；**run-log 的 `--model`** 回答「这次实际用了哪个模型 ID」——二者不可混写。
+
+| 算力档 | 阶段 | Cursor 典型 | Copilot 典型 |
+|--------|------|-------------|--------------|
+| **strong** | constitution / specify / clarify / plan / analyze / tasks / verify | Opus 系 | GPT-4.1 / o 系列等（以你 IDE 所选为准） |
+| **fast** | implement（默认） | Composer 系 | 同上，可用较快档 |
+| **strong↑** | implement 卡住 / verify 裁决 | 临时升 Opus | 换更强 GPT 档 |
+
+- 前期 → **strong**；implement → **fast**；验证与疑难调试 → **strong**（验证是裁判，不能比被测对象更弱）。
+- 路由细节以 constitution 的「模型路由」表为准；**写 run-log 时只记实际模型名**。
 
 ## 质量门（阶段间硬约束）
 
