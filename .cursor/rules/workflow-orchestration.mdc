@@ -149,13 +149,31 @@ alwaysApply: true
   .specify/scripts/bash/run-log.sh phase \
     --phase <阶段名> \
     --model "<本次对话实际模型 ID>" \
-    --skills "<本阶段激活的维度/skill,逗号分隔>" \
+    --skills "<实际 Read/执行的 skill,见下方格式>" \
+    --skills-skipped "<registry 命中但未 Read/未执行的维度,可选>" \
     --scripts "<本阶段跑过的脚本,逗号分隔>" \
     --artifacts "<本阶段应产出的文件/目录,逗号分隔,相对 FEATURE_DIR>" \
     --note "<一句话:做了什么/验证了什么>"
   ```
-  其中 `--model/--skills/--scripts/--note` 是**自述**（日志会标 `_(自述)_`，不作验收证据）；
+  其中 `--model/--skills/--skills-skipped/--scripts/--note` 是**自述**（日志会标 `_(自述)_`，不作验收证据）；
   `--artifacts` 由脚本**机械核验**文件是否真实存在并渲染 ✓/✗（这是该块唯一可信项）。
+
+**`--skills` 硬约束（须记录真实使用,禁止误报 registry 绑定）**：
+
+- **记什么**：仅列出本阶段**实际 `Read` 了 `SKILL.md` 并按其流程执行**的 skill/维度（registry 的 `skill` 名或路径 basename,如 `brainstorming`、`speckit-specify`）。
+- **禁止**：把 `.cursor/registry.yaml` 里 `bind_phase` 命中的维度**整包抄进** `--skills`,若未 Read/未执行则不得出现。
+- **渐进披露**：只注入 registry `summary`(L1) 而未 Read 全文 → **不得**写入 `--skills`;若需留痕,写入 `--skills-skipped` 或 `--note`。
+- **部分执行**：必须标深度/范围,格式 `{skill}[{depth}]`,`depth` 取值:
+  - `full` — Read 全文且完成该 skill 主流程(或本阶段 relevant 步骤)
+  - `partial:<简述>` — 只用了子集(例:`brainstorming[partial:背景闸门·一次一问]`)
+  - `L1` — 仅 registry summary,未 Read SKILL.md(通常应改记 `--skills-skipped`,勿标 L1 为「已用」)
+- **未使用但阶段相关**：写入 `--skills-skipped`(逗号分隔),例 `product_taste,to-prd`;或在 `--note` 说明「registry 命中 X/Y,未 Read」。
+- **示例**:
+  ```bash
+  --skills "brainstorming[partial:背景闸门·一次一问],speckit-specify[full]" \
+  --skills-skipped "product_taste,to-prd,visual-brainstorming" \
+  --note "brainstorming 未做方案对比与设计分节确认"
+  ```
 
 **`--model` 硬约束（防 Copilot/Cursor 混记）**：
 - 填**本次会话真实运行的模型标识**（如 `gpt-4.1`、`claude-opus-4-20250514`、`composer-2.5`），

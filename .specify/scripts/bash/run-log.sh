@@ -18,9 +18,10 @@
 #       Append one machine-evidence line. Skipped when RUN_LOG_SUPPRESS is set
 #       (used by gate-analyze.sh so its delegated sub-gate calls are not double-logged).
 #
-#   run-log.sh phase --phase NAME [--model M] [--skills CSV] [--scripts CSV] \
-#                    [--artifacts CSV] [--note TEXT]
-#       Append a phase block. model/skills/scripts/note are self-reported;
+#   run-log.sh phase --phase NAME [--model M] [--skills CSV] [--skills-skipped CSV] \
+#                    [--scripts CSV] [--artifacts CSV] [--note TEXT]
+#       Append a phase block. model/skills/skills-skipped/scripts/note are self-reported;
+#       skills MUST list only skills actually Read/executed (see workflow-orchestration.mdc).
 #       each artifact in --artifacts is verified for existence under FEATURE_DIR
 #       (absolute paths allowed) and rendered ✓ / ✗.
 #
@@ -29,8 +30,9 @@
 #
 # Usage examples:
 #   ./run-log.sh gate gate-stack.sh 0
-#   ./run-log.sh phase --phase plan --model "gpt-4.1" --skills "api_design,data_modeling" \
-#   # --model 填本次实际模型 ID;省略时由 resolve_model_for_log 推断(勿填 Opus/Composer 路由档名)
+#   ./run-log.sh phase --phase plan --model "gpt-4.1" \
+#       --skills "api-and-interface-design[full],data-modeling[partial:实体清单]" \
+#       --skills-skipped "observability" \
 #                --artifacts "plan.md,research.md,contracts" --note "确认 REST + Postgres"
 
 set -uo pipefail
@@ -214,6 +216,7 @@ ensure_header() {
         printf '>\n'
         printf '> - **GATE 行 = 机械证据**:门脚本退出码自记,模型无法篡改。\n'
         printf '> - **PHASE 块**:标 _(自述)_ 的项是编排层声明,**不构成验收证据**;\n'
+        printf '>   `--skills` 须为**实际 Read/执行的 skill**(见 workflow-orchestration);禁止误报 registry 绑定;\n'
         printf '>   标 _(机械核验)_ 的产物存在性由脚本核验文件系统得出;路径为可点击链接。\n\n'
         printf -- '---\n\n'
     } >> "$LOG_FILE"
@@ -279,15 +282,16 @@ verify_artifacts() {
 }
 
 cmd_phase() {
-    local phase="" model="" skills="" scripts="" artifacts="" note=""
+    local phase="" model="" skills="" skills_skipped="" scripts="" artifacts="" note=""
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --phase)     phase="${2:-}"; shift 2 ;;
-            --model)     model="${2:-}"; shift 2 ;;
-            --skills)    skills="${2:-}"; shift 2 ;;
-            --scripts)   scripts="${2:-}"; shift 2 ;;
-            --artifacts) artifacts="${2:-}"; shift 2 ;;
-            --note)      note="${2:-}"; shift 2 ;;
+            --phase)           phase="${2:-}"; shift 2 ;;
+            --model)           model="${2:-}"; shift 2 ;;
+            --skills)          skills="${2:-}"; shift 2 ;;
+            --skills-skipped)  skills_skipped="${2:-}"; shift 2 ;;
+            --scripts)         scripts="${2:-}"; shift 2 ;;
+            --artifacts)       artifacts="${2:-}"; shift 2 ;;
+            --note)            note="${2:-}"; shift 2 ;;
             *) echo "run-log.sh phase: 未知参数 '$1'" >&2; shift ;;
         esac
     done
@@ -306,7 +310,10 @@ cmd_phase() {
         printf '\n## `%s` · PHASE: %s\n\n' "$(ts)" "$phase"
         printf -- '- 模型 _(自述·实际运行)_: %s\n' "$resolved_model"
         printf -- '- 运行时 _(推断)_: %s\n' "$(detect_runtime)"
-        printf -- '- 激活 skill/维度 _(自述)_: %s\n' "${skills:-—}"
+        printf -- '- 使用 skill _(自述·须实际 Read/执行)_: %s\n' "${skills:-—}"
+        if [[ -n "$skills_skipped" ]]; then
+            printf -- '- 未使用 skill/维度 _(自述·registry 命中或候选但未 Read)_: %s\n' "$skills_skipped"
+        fi
         printf -- '- 执行脚本 _(自述)_: %s\n' "${scripts:-—}"
     } >> "$LOG_FILE"
     if [[ -n "$artifacts" ]]; then
@@ -325,7 +332,7 @@ main() {
         gate)  shift; cmd_gate "$@" ;;
         phase) shift; cmd_phase "$@" ;;
         *)
-            echo "用法: run-log.sh {gate <name> <exit-code> | phase --phase NAME [--model M] [--skills CSV] [--scripts CSV] [--artifacts CSV] [--note TEXT]}" >&2
+            echo "用法: run-log.sh {gate <name> <exit-code> | phase --phase NAME [--model M] [--skills CSV] [--skills-skipped CSV] [--scripts CSV] [--artifacts CSV] [--note TEXT]}" >&2
             exit 2
             ;;
     esac
