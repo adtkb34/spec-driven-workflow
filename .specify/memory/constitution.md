@@ -182,6 +182,52 @@ implement 完成后**必须**进入 `verify` 阶段（本工作流自有阶段�
 任一未过 → 回到 implement 修复后**重跑 verify**；不得跳过或降低标准。
 证据汇总写入特性目录的 `verify.md`。
 
+## 交付与发布范式（Deliver & Release · verify 之后，不替代 verify）
+
+当 `stack.yml.release.enabled: true` 时，「合并/MR」与「上线」因**频率/触发/粒度不同**分为两个环节
+（对应 deploy ≠ release、Continuous Delivery ≠ Continuous Deployment）：
+
+- **deliver（交付）**：跟 MR 节奏，每个 feature `verify` 通过后**可自动跟**——PR → CI 绿 → 合并 main → staging。
+  per-feature，证据 `specs/<feature>/deliver.md`，门 `gate-deliver.sh`。
+- **release（上线）**：**仅用户显式要求**才执行，低频，**可聚合多个已交付 feature** 渐进发布到生产 + 回滚 + 取证。
+  仓库级 `.releases/<version>/release.md` + `RELEASES.md` 账本，门 `gate-release.sh`。
+
+**边界**：verify 管「产物对不对」→ deliver 管「合进 main、到 staging」→ release 管「上没上去生产 + 能否回滚」。三者不可互相替代。
+**上线只由用户触发**，不得在 verify/deliver 后自动上生产（呼应 Principle III：方向决策归用户）。
+
+范式综合业界优秀实践（DORA / Progressive Delivery / trunk-based / GitHub Environments / expand-contract /
+feature flags / 自动回滚），按**成熟度档** `tier`（T0 最小合规 → T3 精英）选 DoD，详见 `.specify/memory/release-profiles.md`。
+七条核心原则不可违背：① 小批量+短命分支+频繁合并；② 解耦部署与发布（feature flags）；③ 不可变制品（一次构建、多处部署、SHA）；
+④ **自动回滚优先于自动部署**；⑤ 渐进暴露+SLI 闸（T2+）；⑥ **expand-contract 迁移**（先扩后缩、每阶段可回滚）；
+⑦ 全程取证/部署标记（timestamp+git_sha+outcome，可算 DORA 五指标）。
+
+**可执行 DoD**：制品可追溯（SHA）、健康检查取证（退出码为准）、**回滚路径存在**、部署标记；release 还须 includes 的
+每个 feature 都已 deliver。`gate-deliver.sh` / `gate-release.sh` 机械判定，证据落对应文件（不留「待发/待验/待上线」）。
+**失败判据**：deliver 失败回 implement→verify→重 deliver；release 失败回 release 修后重跑；上线暴露功能 bug 则回
+implement→verify→deliver→再 release。外部发布工具（gstack `/ship` 等）**不替代**本环节、不得绕过取证。
+`speckit-release` 同时是**生成器**：为新项目按策略产出专属 `deploy/` 脚本。
+
+## 迭代与维护再入（Iteration & Maintenance Re-entry · 已交付/已上线后的变更）
+
+流水线不是一次性单程。当一个**已过 verify / 已交付 / 已上线**的特性，被用户报告功能 bug 或提出
+变更/改进时（如 `002` 笔记 App 的「点新建无反应」），**不从零新开 specify**，而是 **amend 既有特性**：
+复用其 `spec.md` / `plan.md` / `stack.yml`，只动受影响的部分。触发是**用户驱动**（方向归用户）。
+
+按改动性质三分级（拿不准默认按更高档）：
+
+- **缺陷修复（bug fix）**：用 `debugging`(diagnose) 维度定位根因 → 外科式修复 → **必过 verify**：
+  重跑受影响的 Acceptance Scenario，并**新增一条防复发的验收/回归项**（呼应 002 教训），证据追加到 `verify.md`。
+  若验收场景本就漏了该情形，先把它补进 spec 的 Acceptance（否则改了代码却没有任何场景守住它）。
+- **小改进 / 变更请求（change request）**：先**更新 spec 的相关条目**（记为变更，不重写整份）→ 按改动幅度
+  **局部**重过 clarify/plan/analyze 的相关子步骤（不整条重跑）→ implement → **必过 verify**。
+- **大改 / 架构级 / 不可逆**：当作 `complex` 新特性走全流水线（可在新特性里引用旧特性）。
+
+**再入红线（不可豁免）**：
+1. **任何再入都必须重过 verify**——「验证而非声称」对维护同样不打折，gate-verify 照跑。
+2. **行为变更先改 spec 再改码**：禁止「代码改了、spec/验收不改」的漂移（一致性红线的延伸）。
+3. **修 bug 必补防复发项**：缺陷暴露的场景必须沉淀为一条新的验收/回归，防止同类问题再次发生。
+4. **触发再发布则回发布范式**：已上线特性的变更若需重新发布，按 deliver→release，**回滚路径先于部署**。
+
 ## 质量红线（Quality Redlines · 自动补齐，不询问用户）
 
 - 零模糊点：spec 无 `[NEEDS CLARIFICATION]` 才进 plan。
@@ -201,7 +247,10 @@ implement 完成后**必须**进入 `verify` 阶段（本工作流自有阶段�
 各阶段执行前应核对：是否遵守模型路由、是否触发用户闸门、是否过技术栈闸门、
 是否守住质量红线、是否通过 verify 阶段的可执行 DoD。
 
-**Version**: 1.6.1 | **Ratified**: 2026-06-02 | **Last Amended**: 2026-06-03
+**Version**: 1.9.0 | **Ratified**: 2026-06-02 | **Last Amended**: 2026-06-03
+<!-- v1.9.0: 新增「迭代与维护再入」(已交付/已上线后的 bug fix / change request / 大改三分级,amend 既有特性而非从零 specify;再入红线:必过 verify / 行为变更先改 spec / 修 bug 必补防复发项 / 触发再发布回发布范式);gate-stack.sh 增加 global_prefs 闸门(Principle VII,standard/complex 必填);新增 .specify/tests/run-gate-tests.sh 门回归测试;workflow.yml 补齐真实流水线并声明 source-of-truth;ARCHITECTURE.html 目录/落地步骤同步到当前 -->
+<!-- v1.8.0: 发布范式拆为 deliver(交付·跟 MR 自动·per-feature)+ release(上线·仅用户触发·聚合多 feature·仓库级账本)两环节;新增 gate-deliver.sh + deliver-template.yml;gate-release.sh 改仓库级 .releases/<version>/(校验 includes 都已 deliver);registry 拆 delivery+release 维度;上线只由用户触发不自动上生产 -->
+<!-- v1.7.0: 新增「release 阶段与发布范式」(verify 之后、不替代 verify) + release-profiles.md(7 原则/6 阶段/T0–T3/回滚矩阵) + gate-release.sh + speckit-release 维度(编排+生成器) + stack.yml release 段;综合 DORA/Progressive Delivery/trunk-based/GitHub Environments/expand-contract/feature flags/自动回滚 -->
 <!-- v1.1.0: 新增「技术栈与运行方式闸门」+ 两条质量红线（技术栈已确认 / 运行方式可行） -->
 <!-- v1.6.0: 新增原则 VII「环境隔离」+ 冲突裁决链追加「全局偏好」最低优先级 + 环境隔离闸门（specify 起始，决策记入 stack.yml.global_prefs） -->
 <!-- v1.6.1: run-log --model 须记实际模型 ID,禁止用 Opus/Composer 路由档冒充;Copilot/GPT 与 Cursor 分记 -->

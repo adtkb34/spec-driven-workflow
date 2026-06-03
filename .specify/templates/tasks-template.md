@@ -241,6 +241,17 @@ With multiple developers:
 
 ---
 
+## 验收判据（implement 完成条件 · sync-verify 会抽取）
+
+- 每条 User Story 须有 `**独立验收 USn**：` 单行任务（见各 US 阶段）
+- 列出可机械执行的命令（反引号包裹完整路径）：
+  - `cd [app-dir] && npm run build`
+  - `cd [app-dir] && npm test`
+  - `cd [app-dir]/src-tauri && cargo test`（如适用）
+- GUI 栈：`tauri dev` / `tauri build` 写在判据中；`tauri build` 由 sync 标为 `optional`（`VERIFY_FULL=1` 才在 gate 中执行）
+
+---
+
 ## Notes
 
 - [P] tasks = different files, no dependencies

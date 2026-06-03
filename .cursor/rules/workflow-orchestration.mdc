@@ -10,7 +10,7 @@ alwaysApply: true
 ## 每个阶段开始时（必做）
 
 1. **查表激活维度**：读取 `.cursor/registry.yaml`，找出 `bind_phase` 包含当前阶段
-   （specify / clarify / plan / analyze / tasks / implement / verify）的所有维度。
+   （specify / clarify / plan / analyze / tasks / implement / verify / deliver / release）的所有维度。
    **先注入各维度的 `summary`（L1）**，按下方「渐进披露协议」决定是否再 `Read` 全文（L2），
    然后执行 speckit 阶段逻辑。
 
@@ -128,7 +128,10 @@ alwaysApply: true
 | 进 plan/tasks/implement 前 | `gate-stack.sh` | `stack.yml` 存在、`confirmed: true`、有 `form` |
 | plan 后 / analyze | `activate-dimensions.sh` | 按 `stack.yml` 确定性输出该激活的条件维度 |
 | analyze | `gate-analyze.sh` | 聚合：无模糊点/栈已确认/故事有落点/维度路径可解析 |
-| implement 后 | `gate-verify.sh` | 跑 `verify.yml` 命令看退出码、扫残留、按 `form` 选 DoD 档 |
+| tasks 后 / implement 后 | `sync-verify.sh` | 从 spec/tasks 生成 `verify-coverage.yml` 并合并 `verify.yml` |
+| implement 后 | `gate-verify.sh` | sync + 跑 `verify.yml` + 对齐检查 + 扫残留、按 `form` 选 DoD 档 |
+| verify 后（`release.enabled`，跟 MR） | `gate-deliver.sh` | per-feature：前置 verify + 跑 `deliver.yml` + 核验 PR/CI/SHA（T1+ 加 staging） |
+| 用户触发上线时 | `gate-release.sh [.releases/<version>]` | 仓库级：includes 都已 deliver + 跑 `release.yml` + 回滚路径/SHA/按 `tier` canary 证据 |
 
 门只判**可机械判定**项；主观质量仍由 Opus 判断，门与人工**互补**。
 
@@ -141,7 +144,7 @@ alwaysApply: true
 - **GATE 行 = 机械证据（可信）**：4 个门脚本（`gate-clarify/stack/analyze/verify`）已挂 EXIT trap，
   退出码由脚本自记，编排层无法篡改。无需手动写，跑门即自动落盘。
 - **PHASE 块 = 自述 + 产物机械核验**：每个 speckit 阶段（specify/clarify/plan/analyze/tasks/
-  implement/verify）**结束时，编排层必须调用一次**：
+  implement/verify/deliver/release）**结束时，编排层必须调用一次**：
   ```bash
   .specify/scripts/bash/run-log.sh phase \
     --phase <阶段名> \
@@ -196,9 +199,35 @@ analyze 阶段必须**逐条**核对以下项，任一失败则不放行：
 ## verify 阶段（implement 之后必做，不可跳过）
 
 「完成」= 被验证过真的能跑，**不接受子agent自我汇报**。**DoD 按产物形态选档**
-（见 `.specify/memory/verify-profiles.md`）：先跑 `gate-verify.sh`（跑 `verify.yml` 命令看退出码、
-按 `form` 选档、扫残留），再由编排层**亲自**补齐该档不可机械判定的人工验收项。
-web 档用 `verification` 维度（chrome-devtools-cli，纯 shell；降级 MCP）；其余形态用各自命令：
+（见 `.specify/memory/verify-profiles.md`）。
+
+**测试主导权（不管什么形态都适用）**：**AI 主导测试，人只审报告**。
+- 能自动的 AI **全自动测**（命令/CLI/HTTP/headless 浏览器/WebDriver/截图）；
+- 视觉交互项 AI **先自动截图再判断**；
+- 真需要人时（凭证/设备/验证码/主观裁决）：在 `verify.md` 标 `需人辅助` + 原因 + 给人的步骤，**显式叫人**，人确认后 AI 回填 `人工确认` 再结案。**禁止静默跳过或假装通过**。
+
+**覆盖完整**：`sync-verify.sh` 自动把 spec 的 **User Story(US) + Edge Cases(EDGE) + 形态专项 DoD(PF)** 全部纳入 `verify-coverage.yml`，逐条进 `verify.md`，不靠人记。
+
+**顺序（硬约束）**：
+1. `tasks` 结束后跑 `sync-verify.sh`（spec/tasks → `verify-coverage.yml` + 合并 `verify.yml` + scaffold `verify.md`）。
+2. 实现代码（WebView/Tauri 栈**禁止** `window.prompt/alert/confirm`）。
+3. AI 按 `verify-coverage.yml` **逐条实测**：`ai-auto` 直接跑、`ai-visual` 启动+截图判断、`needs-human` 叫人辅助；结果写 `verify.md`（不得留「待跑/待 GUI」）。
+4. 跑 `gate-verify.sh`（自动 sync → 机械命令 → **对齐+结案检查** US/EDGE/PF → 需人项须有人工确认 → 残留 → WebView API）。
+
+详见 `.specify/memory/verify-sync.md`。
+
+**`gate-verify.sh` 机械检查项**（任一不过即 FAIL）：
+- `verify.yml` 覆盖 coverage 要求的全部命令；
+- **抽空即报警**：spec 有 User Story/Edge Cases 区块却解析出 0 条（格式漂移）→ FAIL，不假绿；
+- 每条 US 验收为 ✓（GUI 形态/`ui:true` 时 `verify.md` 无「待跑」占位）；
+- **视觉项（ai-visual）防自述**：证据须引用真实产物文件（截图/E2E 报告）或转 `需人辅助+人工确认`；
+- 按 `stack.yml` 的 `complexity` 分档：`trivial`→US+PF；`standard/complex`→US+EDGE+PF 全硬性（允许 `- [x] N/A: 理由`）；
+- 标 `需人辅助` 的项必须有 `人工确认`（不许静默跳过）；
+- `form: desktop` 或栈含 Tauri/Electron 时，源码无 `window.prompt` 等。
+
+**`gate-stack.sh` 防误档**：`ui: true` 或栈含 Tauri/Electron 时，`form` 不得为 `cli`（须 `desktop` 或 `web`）。
+
+web 档用 `verification` 维度（chrome-devtools-cli）；**desktop 档**见 `verify-profiles.md`（真启动 + 点主流程）。
 
 1. **真启动**：用 plan 承诺的方式实际启动产物。
 2. **零报错**：打开后 console 无 error（抓"空白页"类问题）。
@@ -210,15 +239,61 @@ web 档用 `verification` 维度（chrome-devtools-cli，纯 shell；降级 MCP�
 
 任一未过 → 回 implement 修复后**重跑 verify**。证据写入特性目录 `verify.md`。
 
+## deliver / release 两环节（verify 之后 · 仅 `stack.yml.release.enabled` 时启用，不替代 verify）
+
+「合并/MR」与「上线」**频率/触发/粒度不同**，故分两个环节（对应 deploy ≠ release、CD ≠ Continuous Deployment）。
+范式（两环节模型 + 7 原则 + 6 阶段 + T0–T3 + 回滚矩阵）见 `.specify/memory/release-profiles.md`；
+执行细则见 `delivery` / `release` 维度（共用 `speckit-release` skill）。
+
+| 环节 | 触发 | 频率 | 粒度 | 证据 | 门 |
+|------|------|------|------|------|----|
+| **deliver（交付）** | verify 通过后**可自动跟**（跟 MR） | 高 | per-feature | `specs/<f>/deliver.md` | `gate-deliver.sh` |
+| **release（上线）** | **仅用户显式要求**（"上线/发版"） | 低 | **聚合多个已交付 feature** | `.releases/<version>/release.md` + `RELEASES.md` | `gate-release.sh` |
+
+**边界**：verify 管"产物对不对" → deliver 管"合进 main、到 staging" → release 管"上没上去生产 + 能否回滚"。
+
+**deliver**（A–D，跟 MR 自动）：开 PR → 等远端 CI 绿（不靠本地自测）→ 合并 main + 构建不可变制品(SHA) → staging+smoke(T1+)。
+前置 `verify.md` PASS。跑 `gate-deliver.sh`，PASS 后该 feature 可纳入某次上线。
+
+**release**（E–F，**仅用户触发**）：等用户说"上线"才进入；建 `.releases/<version>/`，`release.yml` 的 `includes:`
+列出聚合的已交付 feature；E 生产渐进 canary+SLI 闸(T2+)、`gate:B` 时 prod 前人工确认、破阈自动回滚；
+F 发布后 flag/contract/DORA(T3)。前置 includes 都已 deliver。跑 `gate-release.sh [.releases/<version>]`。
+
+**七原则（不可违背）**：① 小批量+短命分支+频繁合并 ② 解耦部署与发布(feature flags) ③ 不可变制品(一次构建多处部署,SHA) ④ 自动回滚优先于自动部署 ⑤ 渐进暴露+SLI 闸(T2+) ⑥ expand-contract 迁移 ⑦ 全程取证/部署标记(DORA)。
+
+**生成器职责**：对**新项目**，`speckit-release` 按 `strategy` 产出专属 `deploy/` 脚本骨架
+（preflight/deploy/healthcheck/**rollback**，deliver 加 open-pr/ci-wait/merge、T1+ 加 smoke、T2+ 加 canary）；
+对已有发布脚本的项目（如 `deploy_v2`）用 release-profiles 当尺子**校准**而非重造。
+
+**失败处理**：deliver 失败回 implement→verify→重 deliver；release 失败回 release 修后重跑；上线暴露功能 bug → implement→verify→deliver→再 release。
+
+**红线**：不接受"发好了"口头声称（以健康检查退出码 + 证据文件为准）；不可逆改动必须有书面回滚路径；
+**上线仅用户触发**，不在 verify/deliver 后自动上生产；跨前后端/多组件**后端先(向后兼容)→前端后**、迁移走 expand-contract。
+外部发布工具（gstack `/ship` 等）**不替代**本环节，且不得绕过取证。
+
+## 迭代与维护再入（已交付/已上线后的变更 · 用户触发）
+
+已过 verify / 已交付 / 已上线的特性被报 bug 或提变更时，**amend 既有特性**（复用其
+`spec.md`/`plan.md`/`stack.yml`），**不从零 specify**。三分级（拿不准按更高档）：
+
+- **bug fix**：`debugging`(diagnose) 定位 → 外科式修 → **必过 verify**（重跑受影响 Acceptance
+  + **新增防复发回归项**，证据进 `verify.md`）；验收漏了该情形先补进 spec Acceptance。
+- **change request（小改）**：先改 spec 相关条目 → **局部**重过 clarify/plan/analyze 子步骤
+  （不整条重跑）→ implement → **必过 verify**。
+- **大改/架构级/不可逆**：当作 `complex` 新特性走全流水线。
+
+**再入红线**：① 任何再入都必须重过 verify（gate-verify 照跑）；② 行为变更**先改 spec 再改码**，
+禁止 spec/码漂移；③ 修 bug **必补防复发验收/回归项**；④ 触发再发布则回 deliver→release，回滚路径先于部署。
+
 ## 模型路由（算力档建议 · 与 run-log 的「实际模型」分离）
 
 **路由**回答「该用多强的模型」；**run-log 的 `--model`** 回答「这次实际用了哪个模型 ID」——二者不可混写。
 
 | 算力档 | 阶段 | Cursor 典型 | Copilot 典型 |
 |--------|------|-------------|--------------|
-| **strong** | constitution / specify / clarify / plan / analyze / tasks / verify | Opus 系 | GPT-4.1 / o 系列等（以你 IDE 所选为准） |
-| **fast** | implement（默认） | Composer 系 | 同上，可用较快档 |
-| **strong↑** | implement 卡住 / verify 裁决 | 临时升 Opus | 换更强 GPT 档 |
+| **strong** | constitution / specify / clarify / plan / analyze / tasks / verify / **release(上线)裁决** | Opus 系 | GPT-4.1 / o 系列等（以你 IDE 所选为准） |
+| **fast** | implement（默认） / **deliver 脚本执行** | Composer 系 | 同上，可用较快档 |
+| **strong↑** | implement 卡住 / verify 裁决 / **release go-no-go** | 临时升 Opus | 换更强 GPT 档 |
 
 - 前期 → **strong**；implement → **fast**；验证与疑难调试 → **strong**（验证是裁判，不能比被测对象更弱）。
 - 路由细节以 constitution 的「模型路由」表为准；**写 run-log 时只记实际模型名**。
@@ -229,6 +304,8 @@ web 档用 `verification` 维度（chrome-devtools-cli，纯 shell；降级 MCP�
 - 进入 `implement` 前：`analyze` 已确认 spec / plan / tasks 一致、功能无遗漏、运行方式可行。
 - `implement` 之后：**必须经 `verify` 阶段**，按可执行 DoD 逐条留证据后才算完成。
 - 最终完成判据：verify 的可执行 DoD 全过（真启动 / 零报错 / 验收全过 / 三态 / 无残留 / 测试真跑）。
+- `verify` 之后（`release.enabled`）：feature 经 `deliver`（跟 MR，过 `gate-deliver.sh`：PR/CI/SHA，T1+ staging）合进主干并到 staging。
+- **上线**：仅用户触发 `release`，聚合已交付 feature，过 `gate-release.sh`（includes 都已 deliver / 命令全 0 / 回滚路径 / SHA / 按 tier canary），证据写 `.releases/<version>/release.md` 后才算**上线完成**。deliver/release/verify 三者不可互相替代。
 
 ## 红线（自动补齐，不问用户）
 

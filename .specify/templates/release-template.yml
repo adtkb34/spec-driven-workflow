@@ -1,0 +1,51 @@
+# release.yml — 上线环节产物（机器可读 · 放仓库级 .releases/<version>/）
+# release = 仅用户触发的「上线到生产」，可聚合多个已 deliver 的 feature。NOT per-feature。
+# 由 /speckit-release 按 stack.yml 产出；gate-release.sh 据此机械判定。
+# 范式见 .specify/memory/release-profiles.md。
+#
+# 边界：release 管"上没上去生产 + 能否回滚"。前置:includes 的每个 feature 都已 deliver(gate-deliver PASS)。
+
+version: ""               # 本次发布版本号（如 20260603-120000-a1b2c3d）；空则由生成器按 git 填
+
+tier: T0                  # T0 | T1 | T2 | T3
+strategy: ssh-compose     # rolling | blue-green | canary | feature-flags | ssh-compose
+
+# 本次上线聚合的已交付 feature —— 每个须有 specs/<id>/deliver.md 且 gate-deliver PASS
+includes:
+  - ""                    # 例：001-kanban-board
+
+artifact:
+  sha_required: true
+
+# 上线命令 —— 退出码即真相；optional: true 仅 RELEASE_FULL=1 时跑
+commands:
+  - name: preflight       # 飞行前：目标可达 / 配置存在 / includes 都已 deliver
+    run: "bash deploy/preflight.sh"
+  - name: deploy-prod     # 激活生产（按策略：compose / gcloud run / canary 起步）
+    run: "bash deploy/deploy.sh --env prod"
+  - name: healthcheck     # 发布后探活，退出码为准（原则 7：取证而非声称）
+    run: "bash deploy/healthcheck.sh"
+  # T2+: canary + SLI 闸（生成器在 tier>=T2 时注入）
+  # - name: canary
+  #   run: "bash deploy/canary.sh"   # 每步 SLI 比对基线，破阈自动回滚
+
+health:
+  - "curl -fsS https://example.com/health"
+
+# 回滚 —— 红线「可回滚」：command 或 pointer 至少一个，command 须可执行
+rollback:
+  command: "bash deploy/rollback.sh"
+  pointer: ".releases/PREVIOUS"
+
+# 生产闸 —— B 档在 prod 部署前需人工确认（GitHub Environments required reviewers 或等价）
+gate: B                   # A 全自动直发 | B 生产留人工确认
+
+# expand-contract 迁移的 contract 阶段（清旧）在 release 期执行
+migration:
+  expand_contract: false
+
+# 部署标记 —— 记 timestamp+git_sha+outcome，供算 DORA 五指标
+marker:
+  record: true
+
+notes: ""

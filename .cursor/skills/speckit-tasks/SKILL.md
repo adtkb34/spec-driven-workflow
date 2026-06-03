@@ -119,6 +119,20 @@ Check if `.specify/extensions.yml` exists in the project root.
     To execute: `/{command}`
     ```
 
+## Post-Tasks: Sync verify coverage (mandatory)
+
+After writing `tasks.md`, run from repo root:
+
+```bash
+.specify/scripts/bash/sync-verify.sh
+```
+
+This generates `FEATURE_DIR/verify-coverage.yml` and merges required commands into `verify.yml` from spec user stories + tasks acceptance criteria. See `.specify/memory/verify-sync.md`.
+
+**tasks.md must include** (for reliable extraction):
+- Per story: `- [ ] Txxx **独立验收 USn**：…` (one line, concrete steps)
+- Final section `## 验收判据` with backtick-wrapped runnable commands (e.g. `` `cd apps/foo && npm test` ``)
+
 ## Completion Report
 
 Output path to generated tasks.md and summary:

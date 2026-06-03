@@ -62,6 +62,9 @@ if [[ -f "$STACK_FILE" && -f "$REGISTRY" ]] && command -v ruby >/dev/null 2>&1; 
             [[ -z "$dim" ]] && continue
             p=$(REGISTRY="$REGISTRY" DIM="$dim" ruby -ryaml -e \
                 'd=YAML.load_file(ENV["REGISTRY"])["dimensions"][ENV["DIM"]]||{}; puts d["path"].to_s' 2>/dev/null)
+            if [[ -n "$p" ]]; then
+                p="$(resolve_registry_path "$p")" || p=""
+            fi
             if [[ -z "$p" || ! -f "$p" ]]; then
                 echo "GATE-ANALYZE: FAIL — 激活维度 $dim 的 skill 路径不可解析: ${p:-<empty>}"
                 fail=1

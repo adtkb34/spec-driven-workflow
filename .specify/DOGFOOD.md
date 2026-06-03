@@ -8,28 +8,43 @@
 
 ## 待办（需用户给真实需求后执行）
 
-- [ ] 用户提供一句话真实需求。
-- [ ] `/speckit-specify` → 产出 `spec.md`，标注 `[NEEDS CLARIFICATION]`，并定 `complexity`。
-- [ ] `/speckit-clarify` → 消除模糊点。
-- [ ] **跑 `gate-clarify.sh`** → 记录退出码（应 0）。
-- [ ] 技术栈闸门 → 与用户确认方向，写 `FEATURE_DIR/stack.yml`（`confirmed: true`、`form`、能力标志）。
-- [ ] **跑 `gate-stack.sh`** → 记录退出码（应 0）。
-- [ ] **跑 `activate-dimensions.sh`** → 记录激活的条件维度，核对与栈一致。
-- [ ] `/speckit-plan` → `/speckit-tasks`。
-- [ ] `/speckit-analyze` + **跑 `gate-analyze.sh`** → 记录退出码（应 0）。
-- [ ] `/speckit-implement`。
-- [ ] 写 `FEATURE_DIR/verify.yml`（`form` + 启动/测试命令 + `scan_paths`）。
-- [ ] **跑 `gate-verify.sh`** → 退出码 0；按 `form` 档位补人工验收项，写 `FEATURE_DIR/verify.md`。
+- [x] 用户提供一句话真实需求。→「做一个记事本」
+- [x] `/speckit-specify` → `specs/002-markdown-notes-desktop/spec.md`，无 `[NEEDS CLARIFICATION]`，`complexity: standard`。
+- [x] 需求挖掘（brainstorming 等价 clarify）→ 7 问后起草。
+- [x] **跑 `gate-clarify.sh`** → 0（见 run-log）。
+- [x] 技术栈闸门 → Tauri 2 + React + SQLite，`stack.yml` `confirmed: true`。
+- [x] **跑 `gate-stack.sh`** → 0。
+- [x] **跑 `activate-dimensions.sh`** → `frontend_ui`, `data_modeling`。
+- [x] `/speckit-plan` → `/speckit-tasks`。
+- [x] `/speckit-analyze` + **跑 `gate-analyze.sh`** → 0。
+- [x] `/speckit-implement` → `apps/notes-desktop/`。
+- [x] 写 `verify.yml` + **跑 `gate-verify.sh`** → 0。
+- [ ] **GUI 验收表** `verify.md` US1–US5 全部勾选（机械测试已过，界面场景待人工）。
+
+**自动评分**: [`specs/002-markdown-notes-desktop/dogfood-score.md`](../specs/002-markdown-notes-desktop/dogfood-score.md) — **4.2/5（B+）**
 
 ## 证据清单（验收时填写）
 
 | 门 / 步骤 | 命令 | 期望 | 实际退出码 | 证据位置 |
 |-----------|------|------|-----------|----------|
-| clarify   | `gate-clarify.sh`  | 0 |  |  |
-| stack     | `gate-stack.sh`    | 0 |  |  |
-| 激活维度  | `activate-dimensions.sh` | 与栈一致 |  |  |
-| analyze   | `gate-analyze.sh`  | 0 |  |  |
-| verify    | `gate-verify.sh`   | 0 |  | `verify.md` |
+| clarify   | `gate-clarify.sh`  | 0 | 0 | `specs/002-…/run-log.md` |
+| stack     | `gate-stack.sh`    | 0 | 0 | 同上 |
+| 激活维度  | `activate-dimensions.sh` | 与栈一致 | frontend_ui, data_modeling | plan 阶段记录 |
+| analyze   | `gate-analyze.sh`  | 0 | 0 | 同上 |
+| verify    | `gate-verify.sh`   | 0 | 0 | `verify.md`, `dogfood-score.md` |
+
+## 防复发补丁（2026-06-03 · 笔记 App 事故后）
+
+| 机制 | 作用 |
+|------|------|
+| `verify-profiles.md` · **desktop** 档 | GUI 真启动 + 禁 `window.prompt` |
+| `gate-stack.sh` | `ui:true` 或 Tauri/Electron 时 **BLOCK `form:cli`** |
+| `sync-verify.sh` | spec/tasks → `verify-coverage.yml` + 合并 `verify.yml` |
+| `gate-verify.sh` | sync + 跑命令 + 对齐检查 + 拦「待跑」；扫 `window.prompt` |
+| `speckit-plan` / `speckit-implement` | 顺序：先 GUI 验收写 verify.md → 再 gate |
+| `verify-template.md` | 验收表模板，禁止「待 GUI」占位 |
+
+详见 `specs/002-markdown-notes-desktop/workflow-gaps.md`。
 
 ## 已完成的结构性自检（优化落地时）
 

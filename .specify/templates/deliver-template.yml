@@ -1,0 +1,30 @@
+# deliver.yml — 交付环节产物（机器可读 · 放 FEATURE_DIR）
+# deliver = 跟 MR 节奏的「交付到主干 + staging」，verify 通过后可自动走。per-feature。
+# 由 /speckit-release 生成器按 stack.yml 产出；gate-deliver.sh 据此机械判定。
+# 范式见 .specify/memory/release-profiles.md。
+#
+# 边界：verify 管"产物对不对"；deliver 管"合进 main、到 staging"；release(仓库级) 管"上没上去生产"。
+
+tier: T0                  # T0 | T1 | T2 | T3（决定是否要 staging+smoke 等）
+
+artifact:
+  version_from: git       # git = <UTC时间戳>-<shortSHA>
+  sha_required: true
+
+# 交付命令 —— 退出码即真相；optional: true 仅 DELIVER_FULL=1 时跑
+commands:
+  - name: open-pr         # 开 PR（gh pr create）或记录 MR
+    run: "bash deploy/open-pr.sh"
+  - name: ci-green        # 等远端 CI 绿灯（gh pr checks --watch），不靠本地自测
+    run: "bash deploy/ci-wait.sh"
+  - name: merge           # gh pr merge（受分支保护：CI 必过+评审）
+    run: "bash deploy/merge.sh"
+  # T1+: 部署 staging + smoke（生成器在 tier>=T1 时注入）
+  # - name: staging
+  #   run: "bash deploy/deploy.sh --env staging && bash deploy/smoke.sh"
+
+# expand-contract 迁移（涉及 DB 时填）—— deliver 期执行 expand 阶段（向后兼容）
+migration:
+  expand_contract: false
+
+notes: ""

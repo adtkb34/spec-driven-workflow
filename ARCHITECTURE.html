@@ -335,6 +335,7 @@
     <nav class="sidebar" aria-label="目录">
       <div class="logo">Spec-Driven<br />产品工作流</div>
       <ul>
+        <li><a href="USAGE.html" style="color:var(--accent);font-weight:600;">→ 使用手册 / 速查卡</a></li>
         <li><a href="#goals">1. 目标与非目标</a></li>
         <li><a href="#principles">2. 设计原则</a></li>
         <li><a href="#architecture">3. 整体架构</a></li>
@@ -359,7 +360,8 @@
         <h1>Spec-Driven 产品工作流 · 架构设计文档</h1>
         <p class="lead">
           <strong>目标：</strong>用户输入一句模糊需求，经过一条可控的流水线被逐层细化成高质量 spec / plan / tasks，最终自动产出成熟、可运行的产品。<br /><br />
-          本工作流以 <strong>GitHub Spec Kit</strong> 为编排骨架，叠加 <strong>本地精选 Skill 注册表</strong>、<strong>三层降级补全机制</strong> 和 <strong>分层模型路由</strong> 三项增强。
+          本工作流以 <strong>GitHub Spec Kit</strong> 为编排骨架，叠加 <strong>本地精选 Skill 注册表</strong>、<strong>三层降级补全机制</strong> 和 <strong>分层模型路由</strong> 三项增强。<br /><br />
+          <strong>怎么开：</strong>见 <a href="USAGE.html">使用手册 / 一张纸速查卡</a>（<code>USAGE.html</code>）。
         </p>
       </header>
 
@@ -401,7 +403,7 @@
           <pre class="mermaid">
 flowchart TB
     subgraph L1["编排层 · Orchestration"]
-        SK["GitHub Spec Kit\nconstitution → specify → clarify → plan → analyze → tasks → implement"]
+        SK["GitHub Spec Kit + 自有阶段\nspecify → clarify → plan → analyze → tasks → implement → verify →(deliver)→(release)"]
     end
     subgraph L2["能力层 · Capability"]
         REG[("本地精选\nSkill 注册表")]
@@ -510,6 +512,20 @@ flowchart TB
               <td><span class="badge badge-opus">Opus</span></td>
               <td><strong>可执行 DoD 全过才算完成</strong></td>
             </tr>
+            <tr>
+              <td>交付</td>
+              <td><code>deliver</code>（本工作流自有 · 跟 MR 自动）</td>
+              <td>per-feature：PR → CI 绿 → 合并 main → staging+smoke(T1+)。verify 后可自动跟</td>
+              <td><span class="badge badge-comp">Composer</span></td>
+              <td><strong>gate-deliver 全过 + deliver.md 留证</strong></td>
+            </tr>
+            <tr>
+              <td>上线</td>
+              <td><code>release</code>（本工作流自有 · <strong>仅用户触发</strong>）</td>
+              <td>聚合多个已交付 feature 渐进发布到生产 + 回滚 + 取证；按 tier(T0–T3) 选 DoD。<strong>仓库级 <code>.releases/&lt;version&gt;/</code></strong></td>
+              <td><span class="badge badge-comp">Composer</span>（裁决升 Opus）</td>
+              <td><strong>gate-release 全过 + release.md 留证</strong></td>
+            </tr>
           </tbody>
         </table>
         <p class="callout callout-info">原则：<strong>前期（理解与设计）全程 Opus，后期（执行）默认 Composer</strong>。详见第 7 节。</p>
@@ -529,6 +545,8 @@ flowchart TB
             <tr><td>plan 后 / analyze</td><td><code>activate-dimensions.sh</code></td><td>读 <code>stack.yml</code>+registry，<strong>确定性</strong>输出该激活的条件维度</td></tr>
             <tr><td>analyze</td><td><code>gate-analyze.sh</code></td><td>聚合：无模糊点 / 栈已确认 / 用户故事在 tasks 有落点 / 激活维度路径可解析</td></tr>
             <tr><td>implement 后</td><td><code>gate-verify.sh</code></td><td>跑 <code>verify.yml</code> 命令看退出码 + 扫残留 + 按 <code>form</code> 选 DoD 档</td></tr>
+            <tr><td>verify 后（<code>release.enabled</code>，跟 MR）</td><td><code>gate-deliver.sh</code></td><td>per-feature：前置 verify + 跑 <code>deliver.yml</code> + 核验 PR/CI/制品 SHA（T1+ 加 staging）</td></tr>
+            <tr><td>用户触发上线时</td><td><code>gate-release.sh [.releases/&lt;version&gt;]</code></td><td>仓库级：includes 都已 deliver + 跑 <code>release.yml</code> + 核验回滚/SHA + 按 <code>tier</code> canary 证据</td></tr>
           </tbody>
         </table>
 
@@ -860,39 +878,46 @@ flowchart TB
       <section id="dirs">
         <h2>9. 目录结构</h2>
         <pre><code>workflow/
-├── ARCHITECTURE.html              # 本文档
+├── ARCHITECTURE.html              # 本文档（设计与理由）
+├── USAGE.html                     # 使用手册（速查卡 + 需求输入五维度含 As-Is 现状 + 门/红线）
 ├── .specify/                      # Spec Kit 工作区
 │   ├── memory/
-│   │   ├── constitution.md        # 全局原则 + 模型路由 + 质量红线（v1.4.0）
-│   │   └── verify-profiles.md     # 按 form 的 DoD 档位（web/cli/service/library/pipeline）
+│   │   ├── constitution.md        # 全局原则 + 模型路由 + 质量红线 + 维护再入（v1.9.0）
+│   │   ├── verify-profiles.md     # 按 form 的 DoD 档位（web/desktop/cli/service/library/pipeline）
+│   │   ├── verify-sync.md         # spec/tasks → verify 覆盖对齐协议
+│   │   └── release-profiles.md    # 发布范式（7 原则 / 6 阶段 / T0–T3 / 回滚矩阵）
 │   ├── scripts/bash/              # 可执行门（退出码即真相）
 │   │   ├── gate-clarify.sh        #   进 plan 前：spec 无残留模糊点
-│   │   ├── gate-stack.sh          #   stack.yml 存在且 confirmed
+│   │   ├── gate-stack.sh          #   stack.yml 存在/confirmed/form/global_prefs
 │   │   ├── gate-analyze.sh        #   聚合一致性 / 覆盖 / 维度路径
-│   │   ├── gate-verify.sh         #   跑 verify.yml + 扫残留 + 选 DoD 档
-│   │   └── activate-dimensions.sh #   读 stack.yml 确定性激活条件维度
-│   ├── templates/
-│   │   └── stack-template.yml      # 技术栈闸门产物模板（机器可读）
-│   └── specs/                     # 各特性产物（含 stack.yml / verify.yml / verify.md）
+│   │   ├── gate-verify.sh         #   跑 verify.yml + 扫残留 + 选 DoD 档 + GUI closure
+│   │   ├── gate-deliver.sh        #   per-feature：PR/CI/制品 SHA（T1+ staging）
+│   │   ├── gate-release.sh        #   仓库级：includes 都已 deliver + 回滚/SHA/canary
+│   │   ├── gate-skill-freshness.sh #  registry reviewed 过期 + 路径失效扫描
+│   │   ├── activate-dimensions.sh #   读 stack.yml 确定性激活条件维度
+│   │   ├── sync-verify.sh         #   spec/tasks 自动生成/合并 verify 覆盖
+│   │   ├── dora-report.sh         #   聚合 deliver/release 标记算 DORA 指标
+│   │   └── run-log.sh             #   各阶段/门运转日志（退出码即真相）
+│   ├── tests/                     # 门脚本回归测试（合成 fixture 跑 PASS/BLOCK 双路径）
+│   │   └── run-gate-tests.sh
+│   ├── templates/                 # 机器可读产物模板
+│   │   ├── stack-template.yml      #   技术栈闸门产物
+│   │   ├── verify-template.md       #   验收证据表（禁「待 GUI」占位）
+│   │   ├── deliver-template.yml      #   deliver 环节
+│   │   └── release-template.yml      #   release 环节
+│   └── specs/                     # 各特性产物（含 stack.yml / verify.yml / verify.md / deliver.md）
 └── .cursor/
-    ├── commands/                  # /speckit.* 命令
-    │   ├── speckit.constitution.md
-    │   ├── speckit.specify.md
-    │   ├── speckit.clarify.md
-    │   ├── speckit.plan.md
-    │   ├── speckit.analyze.md
-    │   ├── speckit.tasks.md
-    │   └── speckit.implement.md
     ├── skills/                    # 本地精选 + 增强层固化 skill
-    │   ├── speckit-*/             #   编排命令 skill
+    │   ├── speckit-*/             #   编排命令 skill（含 speckit-verify / speckit-release）
     │   ├── security-and-hardening/ … #  增强层（Addy/Superpowers 提级）
     │   ├── visual-brainstorming/  #   ux_design（Superpowers visual companion）
     │   ├── data-modeling/         #   自编（authored）
+    │   ├── workflow-retro/        #   自反馈闭环（meta · /retro 触发）
     │   └── handoff/               #   跨会话传话（Matt）
-    ├── registry.yaml              # 维度 → skill 映射（7 基础 + 6 通用增强 + 10 条件领域）
+    ├── registry.yaml              # 维度 → skill 映射（7 基础 + 7 通用增强含 retro + 12 条件/交付领域）
     ├── quarantine/                # 联网候选隔离区（SOURCES.md / REVIEW.md + 来源子目录）
     └── rules/
-        ├── workflow-orchestration.mdc  # 阶段编排 + 增强层（非替换）
+        ├── workflow-orchestration.mdc  # 阶段编排 + 增强层（非替换）+ deliver/release
         └── specify-rules.mdc      # Spec Kit 生成的上下文指引</code></pre>
       </section>
 
@@ -902,10 +927,11 @@ flowchart TB
           <li><strong>装编排骨架</strong>：用 Spec Kit 初始化 Cursor 命令与目录。
             <pre><code>uvx --from git+https://github.com/github/spec-kit.git specify init --here --ai cursor</code></pre>
           </li>
-          <li><strong>建注册表</strong>：创建 <code>.cursor/registry.yaml</code>，登记已有本地 skill（<code>brainstorming</code> / <code>first-principles</code> / <code>tdd</code> / <code>to-prd</code>）。</li>
-          <li><strong>写宪法</strong>：在 <code>constitution</code> 中固化「模型路由规则 + 质量红线 + 维度激活规则」。</li>
+          <li><strong>建注册表</strong>：创建 <code>.cursor/registry.yaml</code>，登记本地 skill（<code>brainstorming</code> / <code>first-principles</code> / <code>test-driven-development</code> / <code>to-prd</code> / <code>chrome-devtools-cli</code>），及增强层与条件/交付领域维度。</li>
+          <li><strong>写宪法</strong>：在 <code>constitution</code> 中固化「模型路由规则 + 质量红线 + 维度激活规则 + verify/deliver/release 范式 + 环境隔离闸门」。</li>
+          <li><strong>装可执行门</strong>：放入 <code>.specify/scripts/bash/gate-*.sh</code>（退出码即真相），并用 <code>.specify/tests/run-gate-tests.sh</code> 跑门脚本回归（PASS/BLOCK 双路径）。</li>
           <li><strong>接缺口处理</strong>：在各阶段命令中加入「查表 → 用户闸门 →（不需要才）三层降级 /（需要则）补全路径」，并建好 <code>quarantine/</code>。</li>
-          <li><strong>试跑</strong>：用一个真实需求跑完整条流水线，验证缺口降级与模型路由是否按预期工作。</li>
+          <li><strong>试跑</strong>：用一个真实需求跑完整条流水线（specify→…→verify，必要时 deliver/release），验证缺口降级、门拦截与模型路由是否按预期工作。</li>
         </ol>
       </section>
 
@@ -933,7 +959,7 @@ flowchart TB
       </section>
 
       <footer class="doc-footer">
-        workflow · Spec-Driven 产品工作流架构 · 2026-06-02
+        workflow · Spec-Driven 产品工作流架构 · constitution v1.9.0 · 2026-06-03
       </footer>
     </main>
   </div>

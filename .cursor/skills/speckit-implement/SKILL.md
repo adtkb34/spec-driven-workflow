@@ -173,10 +173,19 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Validate that tests pass and coverage meets requirements
    - Confirm the implementation follows the technical plan
 
-10. **Verify gate (本工作流硬约束 · 不接受自我汇报)**:
-    - Ensure `FEATURE_DIR/verify.yml` declares `form` + start/test `commands` (+ optional `scan_paths`); create it from the example in `.specify/memory/verify-profiles.md` if missing.
-    - Run `.specify/scripts/bash/gate-verify.sh`. **退出码即真相**：非零 → 回 implement 修复后**重跑 gate-verify**，不得跳过或降低标准。
-    - After the gate passes, the orchestration layer **personally** completes the human-judged DoD items for the selected `form` profile (web→chrome-devtools-cli console/三态/UX 红线；cli/service/library/pipeline 各按 `verify-profiles.md`) and writes evidence to `FEATURE_DIR/verify.md`.
+10. **Verify gate (本工作流硬约束 · AI 主导测试 · 不接受自我汇报)** — **顺序不可颠倒**:
+    > 完整流程委派给 `speckit-verify` skill（`.cursor/skills/speckit-verify/SKILL.md`，verify 阶段统一入口）。
+    > 以下为其要点摘录，细则与七条 DoD 以该 skill + `verify-profiles.md` + constitution II-bis 为准。
+    - Run `.specify/scripts/bash/sync-verify.sh` — 从 `spec.md` + `tasks.md` 生成 `verify-coverage.yml`（US + Edge Cases + 形态专项 DoD）并合并 `verify.yml` + scaffold `verify.md`（见 `.specify/memory/verify-sync.md`）。
+    - **WebView/Tauri/Electron** (`form:desktop` 或 stack 含 Tauri)：实现阶段**禁止** `window.prompt/alert/confirm`；交互一律用应用内 Dialog。
+    - **AI 主导逐条实测** `verify-coverage.yml` 全部项，按 owner：
+      - `ai-auto`：直接跑（命令/CLI/HTTP/headless/WebDriver），证据为退出码/断言；
+      - `ai-visual`：启动产物 + **自动截图**判断（三态/白屏/UX）；
+      - `needs-human`：在 `verify.md` 标原因 + 给人步骤，**显式叫人辅助**，人确认后回填 `人工确认` 再结案。**禁止静默跳过**。
+    - 把每条 US/EDGE/PF 结果写入 `verify.md`（✓ 或 `- [x]`；**禁止**「待跑/待 GUI」或空白）。
+    - **后** run `.specify/scripts/bash/gate-verify.sh`（内建 sync + 对齐 + 结案检查）。非零 → 修复 → 重跑。
+    - 发布前：`VERIFY_FULL=1 gate-verify.sh` 跑 `optional: true` 慢命令（如 `tauri build`）。
+    - web 档：gate 通过后补 chrome-devtools-cli（console 零 error、三态）。desktop 档：plan 中 UX 红线已在 GUI 实跑中覆盖。
     - Sub-agent self-reports do **not** count as acceptance evidence.
 
 Note: This command assumes a complete task breakdown exists in tasks.md. If tasks are incomplete or missing, suggest running `/speckit-tasks` first to regenerate the task list.

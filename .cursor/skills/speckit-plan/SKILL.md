@@ -158,6 +158,16 @@ Command ends after Phase 2 planning. Report branch, IMPL_PLAN path, and generate
 
 **Output**: data-model.md, /contracts/*, quickstart.md, updated agent context file
 
+## WebView / 桌面栈（plan 必写 · 写入 plan.md「UI/UX 红线」）
+
+技术栈闸门若确认为 **Tauri / Electron / 任何 WebView 壳 + UI**：
+
+1. `stack.yml` 的 `form:` 必须为 **`desktop`**（有窗口 GUI 时**不得**标 `cli`）；纯浏览器页用 `web`。
+2. plan.md 必须包含：
+   - **禁止** `window.prompt` / `alert` / `confirm`；新建/编辑/删除确认一律**应用内 Dialog**。
+   - verify 承诺：真启动 + spec 验收场景逐条实点（写入 `verify.md`，不得留「待跑」）。
+3. tasks.md 收尾须含 **GUI 冒烟**（新建主实体 → 编辑 → 重启恢复）。
+
 ## Key rules
 
 - Use absolute paths for filesystem operations; use project-relative paths for references in documentation and agent context files

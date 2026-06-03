@@ -1,29 +1,39 @@
 schema_version: "1.0"
 workflow:
   id: "speckit"
-  name: "Full SDD Cycle"
-  version: "1.0.0"
-  author: "GitHub"
-  description: "Runs specify → plan → tasks → implement with review gates"
+  name: "Full SDD Cycle (Spec-Driven 产品工作流)"
+  version: "2.0.0"
+  author: "workflow"
+  description: >-
+    specify → clarify → (技术栈闸门) → plan → analyze → tasks → implement → verify
+    →（release.enabled 时）deliver →（仅用户触发）release。各阶段间由 .specify/scripts/bash/
+    下的可执行门(退出码即真相)拦截。
+
+# ──────────────────────────────────────────────────────────────────────────
+# ⚠ SOURCE OF TRUTH 声明（务必先读）
+# 本工作流的「真相」是 .specify/memory/constitution.md + .cursor/rules/
+# workflow-orchestration.mdc + .cursor/registry.yaml，而非本 YAML。
+#
+# 本 runner 无法表达本工作流的几项核心机制，因此这些机制由编排层(规则/宪法)强制，
+# 不在本 runner 的执行范围内：
+#   • verify / deliver / release 是「本工作流自有阶段」，不是 speckit 原生命令；
+#     由编排层亲自执行 + gate-verify.sh / gate-deliver.sh / gate-release.sh 机械判定。
+#   • 可执行门(gate-*.sh)以退出码为准，本 runner 仅以 type:gate 提示「请运行该脚本」。
+#   • 模型路由、条件维度激活、渐进披露、缺口闸门、环境隔离闸门均在编排层。
+#
+# 因此：禁止把本 runner 当作绕过 verify 红线的「四步直通」入口。
+# 「完成」的唯一判据是 verify 阶段可执行 DoD 全过(见 constitution II-bis)。
+# ──────────────────────────────────────────────────────────────────────────
 
 requires:
-  # 0.8.5 is the first release with engine-side resolution of the
-  # ``integration: "auto"`` default. Older versions would treat "auto"
-  # as a literal integration key and fail at dispatch.
   speckit_version: ">=0.8.5"
   integrations:
-    # The four commands below (specify, plan, tasks, implement) are core
-    # spec-kit commands provided by every integration. The list here is an
-    # advisory, non-exhaustive compatibility hint following the documented
-    # ``any: [...]`` schema -- it is NOT a closed set. The workflow runs
-    # against any integration the project was initialized with, including
-    # ones not listed below, as long as that integration provides the four
-    # core commands referenced in ``steps``.
     any:
       - "claude"
       - "copilot"
       - "gemini"
       - "opencode"
+      - "cursor"
 
 inputs:
   spec:
@@ -33,7 +43,7 @@ inputs:
   integration:
     type: string
     default: "auto"
-    prompt: "Integration to use (e.g. claude, copilot, gemini; 'auto' uses the project's initialized integration)"
+    prompt: "Integration to use (e.g. claude, copilot, gemini, cursor; 'auto' uses the project's initialized integration)"
   scope:
     type: string
     default: "full"
@@ -46,9 +56,26 @@ steps:
     input:
       args: "{{ inputs.spec }}"
 
-  - id: review-spec
+  - id: clarify
+    command: speckit.clarify
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "{{ inputs.spec }}"
+
+  - id: gate-clarify
     type: gate
-    message: "Review the generated spec before planning."
+    message: >-
+      运行 .specify/scripts/bash/gate-clarify.sh — spec 必须零 [NEEDS CLARIFICATION]/TODO
+      才放行 plan。退出码非 0 即停。
+    options: [approve, reject]
+    on_reject: abort
+
+  - id: gate-stack
+    type: gate
+    message: >-
+      技术栈与运行方式闸门：与用户确认形态/登录/持久化/运行部署方式/框架，写入
+      FEATURE_DIR/stack.yml(confirmed: true, form, global_prefs)。然后运行
+      .specify/scripts/bash/gate-stack.sh。退出码非 0 即停，不得默默写进 spec。
     options: [approve, reject]
     on_reject: abort
 
@@ -58,9 +85,17 @@ steps:
     input:
       args: "{{ inputs.spec }}"
 
-  - id: review-plan
+  - id: analyze
+    command: speckit.analyze
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "{{ inputs.spec }}"
+
+  - id: gate-analyze
     type: gate
-    message: "Review the plan before generating tasks."
+    message: >-
+      运行 .specify/scripts/bash/gate-analyze.sh — 聚合：无模糊点 / 栈已确认 /
+      用户故事在 tasks 有落点 / 激活维度路径可解析。退出码非 0 即停。
     options: [approve, reject]
     on_reject: abort
 
@@ -75,3 +110,30 @@ steps:
     integration: "{{ inputs.integration }}"
     input:
       args: "{{ inputs.spec }}"
+
+  - id: verify
+    type: gate
+    message: >-
+      verify 阶段(本工作流自有，不接受自我汇报)：编排层亲自按 verify-profiles.md 的
+      form 档逐条实跑 spec Acceptance + 三态 + 残留扫描，证据写 verify.md，然后运行
+      .specify/scripts/bash/gate-verify.sh。退出码非 0 → 回 implement 修复后重跑 verify。
+      未过 verify 的产物一律视为未完成。
+    options: [approve, reject]
+    on_reject: abort
+
+  - id: deliver
+    type: gate
+    message: >-
+      [仅当 stack.yml.release.enabled: true] deliver(跟 MR)：PR → CI 绿 → 合并 main
+      → staging(T1+)。运行 .specify/scripts/bash/gate-deliver.sh。无 release 流程则 skip。
+    options: [approve, skip]
+    on_reject: abort
+
+  - id: release
+    type: gate
+    message: >-
+      [仅用户显式要求上线时] release(上线)：聚合已交付 feature 渐进发布到生产 + 回滚 +
+      取证，建 .releases/<version>/。运行 .specify/scripts/bash/gate-release.sh。
+      上线只由用户触发，不在 verify/deliver 后自动上生产。
+    options: [approve, skip]
+    on_reject: abort

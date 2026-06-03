@@ -45,6 +45,18 @@ get_repo_root() {
     (cd "$script_dir/../../.." && pwd)
 }
 
+# Resolve a path from registry.yaml: relative paths are under get_repo_root().
+resolve_registry_path() {
+    local p="$1"
+    [[ -z "$p" ]] && return 1
+    if [[ "$p" != /* ]]; then
+        local root
+        root="$(get_repo_root)" || return 1
+        p="$root/$p"
+    fi
+    printf '%s\n' "$p"
+}
+
 # Get current branch, with fallback for non-git repositories
 get_current_branch() {
     # First check if SPECIFY_FEATURE environment variable is set
