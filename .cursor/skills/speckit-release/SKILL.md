@@ -83,11 +83,11 @@ deliver 与 release 各写一次（release 的 run-log 落在 `.releases/<versio
 ```bash
 # deliver（per-feature）
 .specify/scripts/bash/run-log.sh phase --phase deliver \
-  --model "<实际模型 ID>" --skills "delivery" --scripts "gate-deliver.sh" \
+  --model "<实际模型 ID>" --skills "delivery[full]" --scripts "gate-deliver.sh" \
   --artifacts "deliver.md,deliver.yml" --note "PR=<链接> CI=<runID> 已合并+staging"
 # release（仓库级；先 export SPECIFY_FEATURE_DIRECTORY=.releases/<version>）
 SPECIFY_FEATURE_DIRECTORY=.releases/<version> .specify/scripts/bash/run-log.sh phase --phase release \
-  --model "<实际模型 ID>" --skills "release,data_migration?,security?" --scripts "gate-release.sh" \
+  --model "<实际模型 ID>" --skills "speckit-release[full]" --skills-skipped "data_migration,security-and-hardening" --scripts "gate-release.sh" \
   --artifacts "release.md,release.yml" --note "tier=<T?> includes=<...> 已上线<URL> 回滚=<指针>"
 ```
 
