@@ -15,6 +15,18 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
+## Phase Entry (P0 → P2 → P1 · deliver / release)
+
+**deliver** (`--phase deliver`, minimal ceremony):
+1. `phase-brief.sh --phase deliver --unlock-status` — requires `gate-verify` PASS.
+2. P0 self-check → execute deliver flow → `gate-deliver.sh`.
+3. End: `run-log.sh phase --phase deliver ...`.
+
+**release** (`--phase release`, full ceremony — **only when user explicitly requests 上线/发版**):
+1. `phase-brief.sh --phase release` → 5-line opening → wait「继续」.
+2. All `includes` features must have deliver PASS; `gate-release.sh`.
+3. End: `run-log.sh phase --phase release ...` (under `.releases/<version>/`).
+
 ## 这是什么
 
 本 skill 覆盖**两个频率/触发/粒度都不同的环节**（对应 deploy ≠ release、CD ≠ Continuous Deployment）：

@@ -17,6 +17,14 @@ DoD **按产物形态选档**，档位清单见 `.specify/memory/verify-profiles
 > 本 skill 是 verify 阶段的**统一入口**（与其它 `speckit-*` 阶段对称）。
 > `speckit-implement` 收尾会委派到这里；也可单独触发（如维护再入后的重跑 verify）。
 
+## Phase Entry (P0 → P2 → P1 · verify)
+
+1. `phase-brief.sh --phase verify` → P0 self-check.
+2. **full ceremony**: 5-line opening → wait「继续」.
+3. P2: run `sync-verify.sh` then implement evidence in `verify.md`, then `gate-verify.sh`.
+4. After P2 → `activate-dimensions.sh --phase verify` (e.g. verification dimension).
+5. End: `run-log.sh phase --phase verify ...`. Chapter: `verify-deliver-release.md`.
+
 ## 模型路由
 
 verify **用 strong 档（Opus 系）**——验证是裁判，不能比被测对象更弱（constitution「模型路由」）。

@@ -51,6 +51,14 @@ You **MUST** consider the user input before proceeding (if not empty).
     ```
 - If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
 
+## Phase Entry (P0 → P2 → P1 · plan)
+
+1. `phase-brief.sh --phase plan --unlock-status` — plan requires `gate-clarify` + `gate-stack` PASS live.
+2. **full ceremony**: 5-line opening → wait「继续」.
+3. Tech-stack gate (user confirm → `stack.confirmed: true`) before writing plan.
+4. After P2 → `activate-dimensions.sh --phase plan` → D1; Read D2 only when needed.
+5. End: `run-log.sh phase --phase plan ...`. Chapters: `stack-gate.md`, `gates.md`.
+
 ## Workflow Gates (本工作流硬约束 · 退出码即真相)
 
 **进入正文前必须先过门，非零退出即停，先于任何主观判断：**

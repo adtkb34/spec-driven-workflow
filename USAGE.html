@@ -285,6 +285,7 @@
           <li>在仓库根目录用自然语言触发 <code>/speckit-specify</code>（或先 <code>.specify/scripts/bash/create-new-feature.sh</code> 建 <code>specs/&lt;id&gt;-&lt;name&gt;/</code>）。</li>
           <li>特性产物落在 <code>specs/&lt;feature&gt;/</code>（<code>spec.md</code>、<code>stack.yml</code>、<code>plan.md</code>、<code>tasks.md</code>、<code>verify.md</code> …）。可用环境变量 <code>SPECIFY_FEATURE_DIRECTORY</code> 指向该目录。</li>
           <li>按阶段依次：<code>/speckit-clarify</code> → 技术栈闸门（对话 + 写 <code>stack.yml</code>）→ <code>/speckit-plan</code> → <code>/speckit-analyze</code> → <code>/speckit-tasks</code> → <code>/speckit-implement</code> → <strong>verify</strong>（<code>speckit-verify</code> skill，implement 收尾会委派）。</li>
+          <li>每阶段入口先跑 <code>phase-brief.sh --phase &lt;阶段&gt;</code>（P0 提问）；full ceremony 阶段 AI 输出 5 行开场后<strong>等你回复「继续」</strong>再读 skill 全文。gate 解锁用 <code>--unlock-status</code>（实时，不读 phase.yml 缓存）。</li>
           <li>每阶段结束可记运转日志：<code>run-log.sh phase --phase … --model "&lt;实际模型ID&gt;"</code>（模型填界面上的真实 ID，勿填「Opus」档名）。</li>
           <li>跨会话衔接（可选）：显式 <code>/handoff</code> 或 @ <code>session_handoff</code>，只写路径指针，<strong>不能</strong>代替下一会话的 verify。</li>
         </ol>

@@ -2,9 +2,7 @@
 alwaysApply: true
 ---
 
-<!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan at:
-`specs/002-markdown-notes-desktop/plan.md`
-Also see: `quickstart.md`, `data-model.md`, `contracts/`
-<!-- SPECKIT END -->
+<!-- SPECKIT: 特性上下文指针（不硬编码路径） -->
+When working on a feature, resolve paths from `.specify/feature.json` → `feature_directory`.
+Read `FEATURE_DIR/phase.yml` for `current_phase`; run `.specify/scripts/bash/phase-brief.sh` for stage questions.
+Do NOT assume a fixed specs/ path from stale examples.

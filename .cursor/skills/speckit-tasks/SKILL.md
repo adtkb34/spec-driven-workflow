@@ -51,6 +51,12 @@ You **MUST** consider the user input before proceeding (if not empty).
     ```
 - If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
 
+## Phase Entry (P0 → P2 → P1 · tasks)
+
+1. `phase-brief.sh --phase tasks --questions-only` (**minimal ceremony**).
+2. P2: `gate-stack.sh` if not already PASS.
+3. End: `run-log.sh phase --phase tasks ...` (include `sync-verify` in `--scripts` if run).
+
 ## Outline
 
 1. **Setup**: Run `.specify/scripts/bash/setup-tasks.sh --json` from repo root and parse FEATURE_DIR, TASKS_TEMPLATE, and AVAILABLE_DOCS list. `FEATURE_DIR` and `TASKS_TEMPLATE` must be absolute paths when provided. `AVAILABLE_DOCS` is a list of document names/relative paths available under `FEATURE_DIR` (for example `research.md` or `contracts/`). For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").

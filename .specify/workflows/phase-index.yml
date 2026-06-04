@@ -1,0 +1,85 @@
+# Per-phase questions (no answers). Read by phase-brief.sh --questions-only
+version: 1
+brainstorming_modes:
+  none: "trivial + background sufficient — do not log brainstorming as used"
+  partial_background: "one question at a time for purpose/constraints/success"
+  partial_approaches: "standard/complex specify — 2-3 approaches before spec draft"
+  full: "standalone brainstorming project — full skill checklist"
+ceremony:
+  full: "phase-brief + 5-line opening + wait for 继续"
+  minimal: "P0 self-check only; no repeated opening"
+  session: "opening once per implement session; then P0 only"
+phases:
+  specify:
+    ceremony: full
+    brainstorming_default: partial_background
+    questions:
+      - "当前 P1 phase 是否为 specify？FEATURE_DIR 从 feature.json 解析了吗？"
+      - "背景是否充分？若否，brainstorming 下一问是什么（一次一问）？"
+      - "stack.complexity 应为 trivial/standard/complex？global_prefs 闸门做了吗？"
+      - "本阶段禁止写 plan/代码/技术栈定稿 — 是否清楚？"
+      - "结束本阶段 run-log 的 --skills 是否只含实际 Read 的 skill？"
+    forbid_summary:
+      - "未 Read speckit-specify 就写 spec"
+      - "registry 维度名当 --skills 误报"
+  clarify:
+    ceremony: full
+    questions:
+      - "spec.md 残留 [NEEDS CLARIFICATION] 吗？"
+      - "每条澄清是否已写回 spec？"
+      - "trivial 是否仍跑 gate-clarify 扫描？"
+    forbid_summary:
+      - "跳过写回 spec 直接 plan"
+  plan:
+    ceremony: full
+    questions:
+      - "gate-clarify 与 gate-stack 是否已 PASS（或 unlock-status 显示可进 plan）？"
+      - "技术栈闸门已与用户确认且 stack.confirmed=true？"
+      - "plan 是否只写 HOW，不把未确认栈写进 spec Assumptions？"
+    forbid_summary:
+      - "stack 未确认就写 plan.md"
+  analyze:
+    ceremony: minimal
+    questions:
+      - "每条用户故事在 plan/tasks 有落点吗？"
+      - "gate-analyze 机械项全过吗？"
+      - "activate-dimensions 与 stack 一致吗？"
+    forbid_summary:
+      - "跳过 gate-analyze 进 implement"
+  tasks:
+    ceremony: minimal
+    questions:
+      - "tasks.md 与 plan/spec 一致吗？"
+      - "sync-verify 前置条件满足吗？"
+    forbid_summary:
+      - "无 tasks 就 implement"
+  implement:
+    ceremony: session
+    questions:
+      - "gate-analyze 已过吗？"
+      - "仅改与任务相关的代码（外科式）？"
+      - "子 agent 自报不算 verify 证据 — 是否清楚？"
+    forbid_summary:
+      - "顺手重构无关代码"
+      - "跳过 verify"
+  verify:
+    ceremony: full
+    questions:
+      - "sync-verify + gate-verify 顺序对吗？"
+      - "verify.md 每条 US/EDGE 有证据吗？需人辅助项有人工确认吗？"
+    forbid_summary:
+      - "待跑/待 GUI 占位当 PASS"
+  deliver:
+    ceremony: minimal
+    questions:
+      - "gate-verify 已过？release.enabled 为 true？"
+      - "远端 CI 绿 + 证据进 deliver.md？"
+    forbid_summary:
+      - "口头声称发好了"
+  release:
+    ceremony: full
+    questions:
+      - "用户显式要求上线？includes 都已 deliver？"
+      - "回滚路径与 SHA 证据齐全？"
+    forbid_summary:
+      - "verify 后自动上生产"

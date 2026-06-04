@@ -22,7 +22,7 @@ cd workflow
 | 工具 | 用途 |
 |------|------|
 | `bash` | 所有 `gate-*.sh` |
-| `ruby` + `yaml` gem | `activate-dimensions.sh`、registry 解析 |
+| `ruby` + `yaml` gem | `activate-dimensions.sh`、`phase-brief.sh`、registry 解析 |
 | `git` | 特性分支、deliver（可选） |
 
 ### 3. Web 验证（可选）
@@ -45,6 +45,12 @@ cd workflow
 ```
 
 特性产物默认在 **`specs/`**（已在 `.gitignore`，不提交具体产品代码）。
+
+### 阶段提问（P0–P2 / D1–D3）
+
+每阶段入口先跑 `.specify/scripts/bash/phase-brief.sh --phase <阶段>`（只带提问，不带规则正文）。
+`phase.yml` 记录 `current_phase`；gate 解锁状态用 `--unlock-status` **实时**查询，不缓存布尔值。
+索引：`.specify/workflows/workflow-index.yml` + `phase-index.yml`；编排细节按需读 `.specify/memory/orchestration/`。
 
 ### 5. 在本机产品项目里用
 

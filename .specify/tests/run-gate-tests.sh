@@ -159,6 +159,35 @@ else
     printf '  \033[31mFAIL\033[0m %-44s (expected non-zero)\n' "--strict + age0 -> BLOCK"; fail=$((fail + 1))
 fi
 
+echo "── validate-workflow-index ───────────────────────────────"
+if "$BASH_DIR/validate-workflow-index.sh" >/dev/null 2>&1; then
+    printf '  \033[32mok\033[0m   %-44s (exit 0)\n' "workflow-index + phase-index"; pass=$((pass + 1))
+else
+    printf '  \033[31mFAIL\033[0m %-44s\n' "workflow-index + phase-index"; fail=$((fail + 1))
+fi
+
+echo "── phase-brief ───────────────────────────────────────────"
+FIX=$(new_fixture "phase-brief")
+echo "current_phase: specify" > "$FIX/phase.yml"
+echo "# spec" > "$FIX/spec.md"
+cat > "$FIX/stack.yml" <<'YAML'
+form: web
+complexity: trivial
+ui: false
+global_prefs: ignore
+confirmed: true
+YAML
+if SPECIFY_FEATURE_DIRECTORY="$FIX" "$BASH_DIR/phase-brief.sh" --phase specify --questions-only >/dev/null 2>&1; then
+    printf '  \033[32mok\033[0m   %-44s (exit 0)\n' "specify --questions-only"; pass=$((pass + 1))
+else
+    printf '  \033[31mFAIL\033[0m %-44s\n' "specify --questions-only"; fail=$((fail + 1))
+fi
+if SPECIFY_FEATURE_DIRECTORY="$FIX" "$BASH_DIR/phase-brief.sh" --phase specify --json 2>/dev/null | grep -q '"phase": "specify"'; then
+    printf '  \033[32mok\033[0m   %-44s\n' "specify --json has phase"; pass=$((pass + 1))
+else
+    printf '  \033[31mFAIL\033[0m %-44s\n' "specify --json has phase"; fail=$((fail + 1))
+fi
+
 echo "──────────────────────────────────────────────────────────"
 echo "gate tests: $pass passed, $fail failed"
 [[ "$fail" -eq 0 ]] || exit 1

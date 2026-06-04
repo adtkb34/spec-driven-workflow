@@ -51,6 +51,17 @@ You **MUST** consider the user input before proceeding (if not empty).
     ```
 - If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
 
+## Phase Entry (P0 → P2 → P1 · specify)
+
+Before Outline / Background-Sufficiency Gate:
+
+1. Run `.specify/scripts/bash/phase-brief.sh --phase specify` (resume: `--questions-only`).
+2. Self-answer P0 questions from `phase-index.yml` (questions only, no rule dump).
+3. **full ceremony**: 5-line opening (phase, FEATURE_DIR, unlock/gates, model tier, next step) → **wait for user「继续」** before reading this SKILL body (if not already loaded).
+4. Run P2 gates as needed; `phase-brief.sh --unlock-status` for live status (not cached in phase.yml).
+5. **After P2 pass** → `activate-dimensions.sh --phase specify` → inject D1 summaries only.
+6. End with `run-log.sh phase --phase specify ...`. Orchestration: `triage-fast-track.md`, `enhancement-layer.md`.
+
 ## Outline
 
 The text the user typed after `/speckit-specify` in the triggering message **is** the feature description. Assume you always have it available in this conversation even if `$ARGUMENTS` appears literally below. Do not ask the user to repeat it unless they provided an empty command.
