@@ -60,7 +60,7 @@ Before Outline / Background-Sufficiency Gate:
 3. **full ceremony**: 5-line opening (phase, FEATURE_DIR, unlock/gates, model tier, next step) → **wait for user「继续」** before reading this SKILL body (if not already loaded).
 4. Run P2 gates as needed; `phase-brief.sh --unlock-status` for live status (not cached in phase.yml).
 5. **After P2 pass** → `activate-dimensions.sh --phase specify` → inject D1 summaries only.
-6. End with `run-log.sh phase --phase specify ...`. Orchestration: `triage-fast-track.md`, `enhancement-layer.md`.
+6. End with `run-log.sh phase --phase specify ...`（`--scripts` 须含 `gate-spec-coverage.sh`）。Orchestration: `triage-fast-track.md`, `enhancement-layer.md`.
 
 ## Outline
 
@@ -226,7 +226,7 @@ Given that feature description, do this:
 
       - **If [NEEDS CLARIFICATION] markers remain**:
         1. Extract all [NEEDS CLARIFICATION: ...] markers from the spec
-        2. **LIMIT CHECK**: If more than 3 markers exist, keep only the 3 most critical (by scope/security/UX impact) and make informed guesses for the rest
+        2. **LIMIT CHECK**: If more than 3 markers exist, keep only the 3 most critical (by scope/security/UX impact). **超出 3 个的部分禁止 silent 默认句**——须标为 `[ASSUMPTION: …]` 写入 Assumptions，或继续 clarify 直至用户确认；不得用「行业常识猜满」替代。
         3. For each clarification needed (max 3), present options to user in this format:
 
            ```markdown
@@ -288,9 +288,29 @@ Given that feature description, do this:
 
 **trivial 且无补问**：仍写 `- **Q:** 有无 As-Is/候选/环境材料？ **A:** 无，按 trivial 跳过 _(waived)_`。
 
-### 5. run-log
+### 5. spec-coverage.yml 落盘（机械门数据源）
 
-`--note` 可写 `Input Q&A 新增 N 条（②×… ③×…）`。
+Ping 结束后**必须**在 `FEATURE_DIR/spec-coverage.yml` 写入覆盖度（从 `.specify/templates/spec-coverage-template.yml` 复制并填实）：
+
+- `ping_completed_at`：ISO8601 时间戳
+- `complexity`：与 `stack.yml` 一致（若尚无 stack 则按 triage 档位）
+- `dimensions`：五维 `status`（`background` 须 `covered`；②③ `covered|waived|partial`；④ `deferred_clarify`；⑤ `deferred_stack_gate`）；`waived` **必须**有 `note`，且与 spec Input Q&A 对应 **A:** 一致
+- `input_qa_count`：各 `### ②`…`⑤` 下 `- **Q:**` 行数（与 spec 对齐，允许 ±0）
+
+**未完成 Ping / 未写 spec-coverage.yml 时**：不得宣称 specify 完成；`gate-spec-coverage.sh` 会 BLOCK。
+
+### 6. Assumptions 标签（standard/complex）
+
+`## Assumptions` 每条 bullet **必须**以 `[ASSUMPTION]` 或 `[CONFIRMED]` 开头：
+
+- 非用户原话、非 Input Q&A / Ping 已确认 → `[ASSUMPTION] …`
+- 用户 Ping/clarify 已确认 → `[CONFIRMED] …`
+
+trivial 可省略标签（门不检）。
+
+### 7. run-log
+
+`run-log.sh phase --phase specify` 的 `--scripts` 须含 **`gate-spec-coverage.sh`**（若 Ping 刚完成则自跑门，退出码即真相）。
 
 **Ping 未完成（仍有 Missing ②③ 且用户未 waived）时**：不得宣称 specify 完成或进入 clarify。
 
@@ -356,7 +376,7 @@ Report completion to the user with:
 When creating this spec from a user prompt (**仅在已通过 Background-Sufficiency Gate 后适用**；闸门未放行时先 brainstorming 补背景，不要进入下面的 guessing):
 
 1. **Make informed guesses (低影响细节 only)**: Use context, industry standards, and common patterns to fill **low-impact** gaps. 背景/动机/目标/成功标准/核心范围属于高影响项，不靠猜——按闸门先一次一问补齐。
-2. **Document assumptions**: Record reasonable defaults in the Assumptions section
+2. **Document assumptions**: 每条 Assumptions 以 `[ASSUMPTION]` 或 `[CONFIRMED]` 前缀标注来源（见 Post-Draft §6）
 3. **Limit clarifications**: Maximum 3 [NEEDS CLARIFICATION] markers - use only for critical decisions that:
    - Significantly impact feature scope or user experience
    - Have multiple reasonable interpretations with different implications

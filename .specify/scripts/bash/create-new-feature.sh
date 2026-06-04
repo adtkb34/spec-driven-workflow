@@ -394,6 +394,14 @@ if [ "$DRY_RUN" != true ]; then
         fi
     fi
 
+    COVERAGE_FILE="$FEATURE_DIR/spec-coverage.yml"
+    if [ ! -f "$COVERAGE_FILE" ]; then
+        COV_TEMPLATE="$REPO_ROOT/.specify/templates/spec-coverage-template.yml"
+        if [ -f "$COV_TEMPLATE" ]; then
+            cp "$COV_TEMPLATE" "$COVERAGE_FILE"
+        fi
+    fi
+
     # Inform the user how to persist the feature variable in their own shell
     printf '# To persist: export SPECIFY_FEATURE=%q\n' "$BRANCH_NAME" >&2
 fi

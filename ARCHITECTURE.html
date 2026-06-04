@@ -540,7 +540,8 @@ flowchart TB
         <table>
           <thead><tr><th>时机</th><th>脚本</th><th>判定（非零即停）</th></tr></thead>
           <tbody>
-            <tr><td>进 plan 前</td><td><code>gate-clarify.sh</code></td><td>spec 无残留 <code>[NEEDS CLARIFICATION]</code> / TODO</td></tr>
+            <tr><td>specify 结束</td><td><code>gate-spec-coverage.sh</code></td><td><code>spec-coverage.yml</code> + Input Q&A + Assumptions 标签</td></tr>
+            <tr><td>进 plan 前</td><td><code>gate-clarify.sh</code></td><td>spec 无残留模糊点 + delegate 覆盖度门</td></tr>
             <tr><td>plan/tasks/implement 前</td><td><code>gate-stack.sh</code></td><td><code>stack.yml</code> 存在、<code>confirmed: true</code>、有 <code>form</code></td></tr>
             <tr><td>plan 后 / analyze</td><td><code>activate-dimensions.sh</code></td><td>读 <code>stack.yml</code>+registry，<strong>确定性</strong>输出该激活的条件维度</td></tr>
             <tr><td>analyze</td><td><code>gate-analyze.sh</code></td><td>聚合：无模糊点 / 栈已确认 / 用户故事在 tasks 有落点 / 激活维度路径可解析</td></tr>
@@ -890,7 +891,8 @@ flowchart TB
 │   │   ├── verify-sync.md         # spec/tasks → verify 覆盖对齐协议
 │   │   └── release-profiles.md    # 发布范式（7 原则 / 6 阶段 / T0–T3 / 回滚矩阵）
 │   ├── scripts/bash/              # 可执行门（退出码即真相）
-│   │   ├── gate-clarify.sh        #   进 plan 前：spec 无残留模糊点
+│   │   ├── gate-spec-coverage.sh  #   specify 结束：Post-Draft Ping 覆盖度
+│   │   ├── gate-clarify.sh        #   进 plan 前：占位符 + 覆盖度
 │   │   ├── gate-stack.sh          #   stack.yml 存在/confirmed/form/global_prefs
 │   │   ├── gate-analyze.sh        #   聚合一致性 / 覆盖 / 维度路径
 │   │   ├── gate-verify.sh         #   跑 verify.yml + 扫残留 + 选 DoD 档 + GUI closure

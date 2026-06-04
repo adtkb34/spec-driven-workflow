@@ -153,10 +153,11 @@ AI 不得用「加开关让用户选」来回避本该自己定的实现细节�
 
 红线不只写在文里，关键项由 `.specify/scripts/bash/` 下脚本**机械判定**，非零退出即拦截：
 
-- `gate-clarify.sh`：进 plan 前扫 spec 残留 `[NEEDS CLARIFICATION]`/TODO。
+- `gate-spec-coverage.sh`：specify 结束 / 进 plan 前校验 Post-Draft Ping（`spec-coverage.yml`、Input Q&A、Assumptions 标签、非模板占位）。
+- `gate-clarify.sh`：进 plan 前扫 spec 残留 `[NEEDS CLARIFICATION]`/TODO，并 delegate 覆盖度门。
 - `gate-stack.sh`：校验 `stack.yml` 存在且 `confirmed: true`、有 `form:`。
 - `activate-dimensions.sh`：读 `stack.yml`+registry，**确定性**输出该激活的条件维度。
-- `gate-analyze.sh`：聚合（无模糊点 / 栈已确认 / 用户故事在 tasks 有落点 / 激活维度路径可解析）。
+- `gate-analyze.sh`：聚合（无模糊点 / 覆盖度 / 栈已确认 / plan.md 存在 / 用户故事在 tasks 有落点 / 激活维度路径可解析）。
 - `gate-verify.sh`：跑 `verify.yml` 声明的命令看退出码、扫残留、按 `form` 选 DoD 档位。
 
 脚本只做**可机械判定**的检查；主观质量（一致性、品味、根因）仍由 Opus 判断，
@@ -230,7 +231,7 @@ implement→verify→deliver→再 release。外部发布工具（gstack `/ship`
 
 ## 质量红线（Quality Redlines · 自动补齐，不询问用户）
 
-- 零模糊点：spec 无 `[NEEDS CLARIFICATION]` 才进 plan。
+- 零模糊点：spec 无 `[NEEDS CLARIFICATION]` 且 `gate-spec-coverage.sh` PASS 才进 plan。
 - 技术栈已确认：未经用户确认技术栈/架构方向，不得进入 plan。
 - 功能不漏：analyze 阶段交叉核对每条用户故事的落点。
 - 运行方式可行：analyze 阶段核对技术选型与承诺的运行/部署方式相容。
@@ -247,8 +248,8 @@ implement→verify→deliver→再 release。外部发布工具（gstack `/ship`
 各阶段执行前应核对：是否遵守模型路由、是否触发用户闸门、是否过技术栈闸门、
 是否守住质量红线、是否通过 verify 阶段的可执行 DoD。
 
-**Version**: 1.9.0 | **Ratified**: 2026-06-02 | **Last Amended**: 2026-06-03
-<!-- v1.9.0: 新增「迭代与维护再入」(已交付/已上线后的 bug fix / change request / 大改三分级,amend 既有特性而非从零 specify;再入红线:必过 verify / 行为变更先改 spec / 修 bug 必补防复发项 / 触发再发布回发布范式);gate-stack.sh 增加 global_prefs 闸门(Principle VII,standard/complex 必填);新增 .specify/tests/run-gate-tests.sh 门回归测试;workflow.yml 补齐真实流水线并声明 source-of-truth;ARCHITECTURE.html 目录/落地步骤同步到当前 -->
+**Version**: 1.10.0 | **Ratified**: 2026-06-02 | **Last Amended**: 2026-06-04
+<!-- v1.10.0: gate-spec-coverage.sh + spec-coverage.yml（Post-Draft Ping 机械门）；gate-clarify 聚合覆盖度；gate-stack ⑤ Q&A；gate-analyze 查 plan.md；Assumptions [ASSUMPTION]/[CONFIRMED] -->
 <!-- v1.8.0: 发布范式拆为 deliver(交付·跟 MR 自动·per-feature)+ release(上线·仅用户触发·聚合多 feature·仓库级账本)两环节;新增 gate-deliver.sh + deliver-template.yml;gate-release.sh 改仓库级 .releases/<version>/(校验 includes 都已 deliver);registry 拆 delivery+release 维度;上线只由用户触发不自动上生产 -->
 <!-- v1.7.0: 新增「release 阶段与发布范式」(verify 之后、不替代 verify) + release-profiles.md(7 原则/6 阶段/T0–T3/回滚矩阵) + gate-release.sh + speckit-release 维度(编排+生成器) + stack.yml release 段;综合 DORA/Progressive Delivery/trunk-based/GitHub Environments/expand-contract/feature flags/自动回滚 -->
 <!-- v1.1.0: 新增「技术栈与运行方式闸门」+ 两条质量红线（技术栈已确认 / 运行方式可行） -->

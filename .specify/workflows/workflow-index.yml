@@ -14,8 +14,8 @@ phases:
   specify:
     skill: .cursor/skills/speckit-specify/SKILL.md
     orchestration_chapters: [triage-fast-track.md, enhancement-layer.md]
-    gates_before_next: []
-    gates_note: "进 plan 前须 gate-clarify + 技术栈闸门(写 stack.confirmed)"
+    gates_before_next: [gate-spec-coverage.sh]
+    gates_note: "specify 结束须 gate-spec-coverage；进 plan 前须 gate-clarify(含 coverage)+stack"
     artifacts: [spec.md, stack.yml, checklists/requirements.md, phase.yml]
     model_tier: strong
     ceremony: full

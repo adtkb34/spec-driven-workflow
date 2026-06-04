@@ -379,7 +379,7 @@
             <tr><td><strong>技术栈闸门</strong></td><td>⑤；② 迁移</td><td><code>【⑤ 环境与依赖】</code> / <code>【②-迁移】</code></td><td><code>Input Q&A</code> → 再写 <code>stack.yml</code></td></tr>
           </tbody>
         </table>
-        <p>跳过/暂无 → 仍记一条 Q→A（<code>A: waived</code>）。复盘时只读 <code>Input Q&A</code> 即可串起 ②③④⑤ 问答链。详见 <code>speckit-specify</code> Post-Draft Coverage Ping。</p>
+        <p>跳过/暂无 → 仍记一条 Q→A（<code>A: waived</code>）。Ping 结束须写 <code>spec-coverage.yml</code>（机器可读覆盖度）；<code>gate-spec-coverage.sh</code> / <code>gate-clarify.sh</code> 交叉校验 Input Q&A、Assumptions 标签与模板占位，<strong>占位符干净 ≠ 需求已确认</strong>。复盘时读 <code>Input Q&A</code> + <code>spec-coverage.yml</code> 即可串起 ②③④⑤。详见 <code>speckit-specify</code> Post-Draft Coverage Ping。</p>
 
         <h3>五类输入物定义（归类用）</h3>
         <table>
@@ -581,8 +581,9 @@
         <table>
           <thead><tr><th>何时</th><th>脚本</th><th>拦什么 / 做什么</th></tr></thead>
           <tbody>
-            <tr><td>进 plan 前</td><td><code>gate-clarify.sh</code></td><td>spec 残留 <code>[NEEDS CLARIFICATION]</code> / TODO</td></tr>
-            <tr><td>进 plan/tasks/implement 前</td><td><code>gate-stack.sh</code></td><td>stack 缺 <code>confirmed/form</code>；standard/complex 缺 <code>global_prefs</code>；ui+cli；Tauri+cli</td></tr>
+            <tr><td>specify 结束</td><td><code>gate-spec-coverage.sh</code></td><td><code>spec-coverage.yml</code> + Input Q&A + Assumptions 标签 + 模板占位扫描</td></tr>
+            <tr><td>进 plan 前</td><td><code>gate-clarify.sh</code></td><td>残留 <code>[NEEDS CLARIFICATION]</code> / TODO + delegate 覆盖度门</td></tr>
+            <tr><td>进 plan/tasks/implement 前</td><td><code>gate-stack.sh</code></td><td>stack 缺 <code>confirmed/form</code>；standard/complex 缺 <code>global_prefs</code>；ui+cli；Tauri+cli；⑤ 环境 Q&A</td></tr>
             <tr><td>plan 后</td><td><code>activate-dimensions.sh</code></td><td>按 stack <strong>确定性</strong>输出条件维度（非门，但必跑）</td></tr>
             <tr><td>analyze</td><td><code>gate-analyze.sh</code></td><td>模糊点 / 栈已确认 / 故事落点 / 维度路径可解析</td></tr>
             <tr><td>tasks 后、verify 前</td><td><code>sync-verify.sh</code></td><td>生成 <code>verify-coverage.yml</code>、合并 <code>verify.yml</code>、scaffold <code>verify.md</code></td></tr>
@@ -640,6 +641,7 @@
 .specify/scripts/bash/check-prerequisites.sh --json --paths-only
 
 # 门 + verify 同步
+.specify/scripts/bash/gate-spec-coverage.sh   # specify 结束：Post-Draft Ping 覆盖度
 .specify/scripts/bash/gate-clarify.sh
 .specify/scripts/bash/gate-stack.sh
 .specify/scripts/bash/gate-analyze.sh

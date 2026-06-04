@@ -37,6 +37,12 @@ if ! RUN_LOG_SUPPRESS=1 "$SCRIPT_DIR/gate-stack.sh" >/dev/null 2>&1; then
     fail=1
 fi
 
+# 2b) plan.md must exist after plan phase.
+if [[ ! -f "$IMPL_PLAN" ]]; then
+    echo "GATE-ANALYZE: FAIL — plan.md 不存在 ($IMPL_PLAN)"
+    fail=1
+fi
+
 # 3) Every user-story ID in spec is referenced in tasks.md (功能不漏).
 if [[ -f "$FEATURE_SPEC" && -f "$TASKS" ]]; then
     story_ids=$(grep -noE '(US[0-9]+|User Story [0-9]+|用户故事[0-9]+|故事[0-9]+)' "$FEATURE_SPEC" 2>/dev/null \

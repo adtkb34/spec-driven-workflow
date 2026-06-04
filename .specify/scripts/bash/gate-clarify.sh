@@ -42,7 +42,15 @@ if grep -nE '(\bTODO\b|\bTBD\b|\bFIXME\b|\[PLACEHOLDER\])' "$FEATURE_SPEC" >/dev
 fi
 
 if [[ "$fail" -eq 0 ]]; then
-    echo "GATE-CLARIFY: PASS — spec 无残留模糊点 ($FEATURE_SPEC)"
+    if ! RUN_LOG_SUPPRESS=1 "$SCRIPT_DIR/gate-spec-coverage.sh" >/dev/null 2>&1; then
+        echo "GATE-CLARIFY: FAIL — spec 业务覆盖度未确认(见 gate-spec-coverage.sh)"
+        "$SCRIPT_DIR/gate-spec-coverage.sh" 2>&1 | sed 's/^/    /'
+        fail=1
+    fi
+fi
+
+if [[ "$fail" -eq 0 ]]; then
+    echo "GATE-CLARIFY: PASS — spec 无残留模糊点且覆盖度已确认 ($FEATURE_SPEC)"
     exit 0
 fi
 

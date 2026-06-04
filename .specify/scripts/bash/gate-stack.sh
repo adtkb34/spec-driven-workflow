@@ -68,4 +68,25 @@ if ! grep -qE '^[[:space:]]*complexity:[[:space:]]*trivial[[:space:]]*$' "$STACK
 fi
 
 echo "GATE-STACK: PASS — 技术栈已确认 ($STACK_FILE)"
+
+# ⑤ 环境 Q&A：stack 已确认时 spec Input Q&A 须有条 Q→A
+if [[ -f "$FEATURE_SPEC" ]]; then
+    q5=0
+    in5=0
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        if [[ "$line" =~ ^###[[:space:]]*⑤ ]]; then
+            in5=1
+        elif [[ "$line" =~ ^### ]]; then
+            [[ "$line" =~ ^###[[:space:]]*⑤ ]] || in5=0
+        fi
+        if [[ $in5 -eq 1 ]] && [[ "$line" =~ ^-[[:space:]]+\*\*Q:\*\* ]] && [[ "$line" != *"_(none yet)_"* ]]; then
+            q5=$((q5 + 1))
+        fi
+    done < "$FEATURE_SPEC"
+    if [[ $q5 -lt 1 ]]; then
+        echo "GATE-STACK: BLOCKED — stack 已确认但 spec Input Q&A ⑤ 无 Q→A（技术栈闸门须落盘）" >&2
+        exit 1
+    fi
+fi
+
 exit 0

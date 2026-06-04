@@ -163,12 +163,10 @@
 ## Assumptions
 
 <!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right assumptions based on reasonable defaults
-  chosen when the feature description did not specify certain details.
+  每条须以 [ASSUMPTION] 或 [CONFIRMED] 开头（standard/complex；trivial 可省略）。
+  机器可读覆盖度见同目录 spec-coverage.yml（Post-Draft Ping 后写入）。
 -->
 
-- [Assumption about target users, e.g., "Users have stable internet connectivity"]
-- [Assumption about scope boundaries, e.g., "Mobile support is out of scope for v1"]
-- [Assumption about data/environment, e.g., "Existing authentication system will be reused"]
-- [Dependency on existing system/service, e.g., "Requires access to the existing user profile API"]
+- [ASSUMPTION] Users have stable internet connectivity
+- [ASSUMPTION] Mobile support is out of scope for v1
+- [CONFIRMED] Existing authentication system will be reused (from Input Q&A / user)

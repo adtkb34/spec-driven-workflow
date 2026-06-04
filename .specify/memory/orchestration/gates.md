@@ -4,10 +4,11 @@
 
 | 时机 | 脚本 | 作用 |
 |------|------|------|
-| 进 plan 前 | `gate-clarify.sh` | spec 无 `[NEEDS CLARIFICATION]`/TODO |
-| 进 plan/tasks/implement 前 | `gate-stack.sh` | `stack.yml` 存在、`confirmed: true`、有 `form` |
+| specify 结束 | `gate-spec-coverage.sh` | Post-Draft Ping 落盘：`spec-coverage.yml` + Input Q&A + Assumptions 标签 + 模板占位扫描 |
+| 进 plan 前 | `gate-clarify.sh` | 占位符扫描 + **delegate** `gate-spec-coverage.sh` |
+| 进 plan/tasks/implement 前 | `gate-stack.sh` | `stack.yml` 存在、`confirmed: true`、有 `form`；stack 确认时 spec Input Q&A ⑤ 须有 Q→A |
 | plan 后 / analyze | `activate-dimensions.sh` | 按 `stack.yml` 输出该激活的条件维度 |
-| analyze | `gate-analyze.sh` | 聚合：无模糊点/栈已确认/故事有落点/维度路径可解析 |
+| analyze | `gate-analyze.sh` | 聚合：无模糊点/覆盖度/栈已确认/plan.md 存在/故事有落点/维度路径可解析 |
 | tasks 后 / implement 后 | `sync-verify.sh` | 从 spec/tasks 生成 coverage 并合并 verify.yml |
 | implement 后 | `gate-verify.sh` | sync + 跑 verify.yml + 对齐 + 扫残留 |
 | verify 后（release.enabled） | `gate-deliver.sh` | per-feature：前置 verify + deliver.yml + PR/CI/SHA |
@@ -21,7 +22,8 @@
 
 - [ ] 每条用户故事在 plan / tasks 中有落点
 - [ ] 术语 / 数据模型 / 交互与 spec 一致
-- [ ] spec 无残留 `[NEEDS CLARIFICATION]`，技术栈已确认
+- [ ] spec 无残留 `[NEEDS CLARIFICATION]`，覆盖度门 PASS，技术栈已确认
+- [ ] plan.md 存在
 - [ ] 运行方式可行（选型与部署方式相容）
 - [ ] 条件领域维度激活与技术栈一致
 - [ ] 已识别移交 implement 的技术风险点
