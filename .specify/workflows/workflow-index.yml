@@ -11,12 +11,20 @@ naming:
   d2: SKILL.md full
   d3: references/
 phases:
+  charter:
+    skill: .cursor/skills/speckit-charter/SKILL.md
+    orchestration_chapters: [triage-fast-track.md]
+    gates_before_next: [gate-charter.sh]
+    gates_note: "charter 结束须 gate-charter；进 specify 前 P0 确认 charter 已 PASS（不在 specify 重复登记）"
+    artifacts: [charter.md, charter.yml]
+    model_tier: strong
+    ceremony: full
   specify:
     skill: .cursor/skills/speckit-specify/SKILL.md
     orchestration_chapters: [triage-fast-track.md, enhancement-layer.md]
-    gates_before_next: [gate-spec-coverage.sh]
-    gates_note: "specify 结束须 gate-spec-coverage；进 plan 前须 gate-clarify(含 coverage)+stack"
-    artifacts: [spec.md, stack.yml, checklists/requirements.md, phase.yml]
+    gates_before_next: [gate-global-prefs.sh, gate-spec-coverage.sh]
+    gates_note: "specify 开场环境隔离(global-prefs.yml) → 结束须 gate-global-prefs + gate-spec-coverage；上游 charter 须已 PASS"
+    artifacts: [spec.md, charter.md, global-prefs.yml, stack.yml, checklists/requirements.md, phase.yml]
     model_tier: strong
     ceremony: full
   clarify:
@@ -79,6 +87,6 @@ modes:
   amend:
     description: bug fix / change on existing feature — no new specify from scratch
     required_gate: gate-verify.sh
-    skip_phases: [specify]
+    skip_phases: [charter, specify]
   handoff:
     description: resume session — read phase.yml then phase-brief --unlock-status

@@ -4,8 +4,11 @@
 
 | 时机 | 脚本 | 作用 |
 |------|------|------|
-| specify 结束 | `gate-spec-coverage.sh` | Post-Draft Ping 落盘：`spec-coverage.yml` + Input Q&A + Assumptions 标签 + 模板占位扫描 |
-| 进 plan 前 | `gate-clarify.sh` | 占位符扫描 + **delegate** `gate-spec-coverage.sh` |
+| charter 结束 | `gate-charter.sh` | `charter.yml` 已 `confirmed: true`；`charter.md` 非模板 |
+| specify 开场 | （对话）+ `global-prefs.yml` | 环境隔离：用户选 ignore/selective/adopt |
+| specify 结束 | `gate-global-prefs.sh` | `global-prefs.yml` 已 `confirmed: true`（或 legacy `stack.yml` global_prefs） |
+| specify 结束 | `gate-spec-coverage.sh` | Post-Draft Ping 落盘；**delegate** `gate-global-prefs.sh` |
+| 进 plan 前 | `gate-clarify.sh` | 占位符扫描 + **delegate** `gate-global-prefs` + `gate-spec-coverage` |
 | 进 plan/tasks/implement 前 | `gate-stack.sh` | `stack.yml` 存在、`confirmed: true`、有 `form`；stack 确认时 spec Input Q&A ⑤ 须有 Q→A |
 | plan 后 / analyze | `activate-dimensions.sh` | 按 `stack.yml` 输出该激活的条件维度 |
 | analyze | `gate-analyze.sh` | 聚合：无模糊点/覆盖度/栈已确认/plan.md 存在/故事有落点/维度路径可解析 |
@@ -30,6 +33,7 @@
 
 ## 质量门（阶段间硬约束）
 
+- 进 `specify` 前：`gate-charter.sh` PASS（P0/unlock，不在 specify 重复登记 gate）
 - 进 `plan` 前：clarify gate + 技术栈闸门（stack.confirmed）
 - 进 `implement` 前：`gate-analyze.sh` PASS
 - `implement` 之后：必须经 `verify`，DoD 全过

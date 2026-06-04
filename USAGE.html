@@ -200,7 +200,7 @@
           <div class="cheat-block" style="grid-column: 1 / -1;">
             <h3>流水线（门 = 退出码，非零即停）</h3>
             <p class="flow-line">
-              specify → clarify → <span class="gate">gate-clarify</span> → 技术栈闸门+stack.yml → <span class="gate">gate-stack</span>
+              charter → <span class="gate">gate-charter</span> → specify → clarify → <span class="gate">gate-clarify</span> → 技术栈闸门+stack.yml → <span class="gate">gate-stack</span>
               → plan → analyze → <span class="gate">gate-analyze</span> → tasks → sync-verify
               → implement → verify → <span class="gate">gate-verify</span>
               → deliver?（release.enabled）→ <strong>release（仅你说「上线」）</strong>
@@ -218,7 +218,7 @@
           <div class="cheat-block">
             <h3>模型</h3>
             <ul>
-              <li>前期 specify→tasks：<span class="badge-opus">Opus</span></li>
+              <li>前期 charter→tasks：<span class="badge-opus">Opus</span></li>
               <li>implement / deliver：<span class="badge-comp">Composer</span>（卡住升 Opus）</li>
               <li>verify：<span class="badge-opus">Opus（裁判）</span></li>
             </ul>
@@ -282,9 +282,9 @@
       <section id="start">
         <h2>0.1 如何启动一条特性</h2>
         <ol>
-          <li>在仓库根目录用自然语言触发 <code>/speckit-specify</code>（或先 <code>.specify/scripts/bash/create-new-feature.sh</code> 建 <code>specs/&lt;id&gt;-&lt;name&gt;/</code>）。</li>
-          <li>特性产物落在 <code>specs/&lt;feature&gt;/</code>（<code>spec.md</code>、<code>stack.yml</code>、<code>plan.md</code>、<code>tasks.md</code>、<code>verify.md</code> …）。可用环境变量 <code>SPECIFY_FEATURE_DIRECTORY</code> 指向该目录。</li>
-          <li>按阶段依次：<code>/speckit-clarify</code> → 技术栈闸门（对话 + 写 <code>stack.yml</code>）→ <code>/speckit-plan</code> → <code>/speckit-analyze</code> → <code>/speckit-tasks</code> → <code>/speckit-implement</code> → <strong>verify</strong>（<code>speckit-verify</code> skill，implement 收尾会委派）。</li>
+          <li>在仓库根目录用自然语言触发 <code>/speckit-charter</code>（或先 <code>create-new-feature.sh</code> 建 <code>specs/&lt;id&gt;-&lt;name&gt;/</code>）。</li>
+          <li>特性产物落在 <code>specs/&lt;feature&gt;/</code>（<code>charter.md</code>、<code>spec.md</code>、<code>stack.yml</code> …）。可用 <code>SPECIFY_FEATURE_DIRECTORY</code> 指向该目录。</li>
+          <li>按阶段依次：<code>/speckit-charter</code> → <code>/speckit-specify</code> → <code>/speckit-clarify</code> → 技术栈闸门 → <code>/speckit-plan</code> → … → <strong>verify</strong>。</li>
           <li>每阶段入口先跑 <code>phase-brief.sh --phase &lt;阶段&gt;</code>（P0 提问）；full ceremony 阶段 AI 输出 5 行开场后<strong>等你回复「继续」</strong>再读 skill 全文。gate 解锁用 <code>--unlock-status</code>（实时，不读 phase.yml 缓存）。</li>
           <li>每阶段结束可记运转日志：<code>run-log.sh phase --phase … --model "&lt;实际模型ID&gt;"</code>（模型填界面上的真实 ID，勿填「Opus」档名）。</li>
           <li>跨会话衔接（可选）：显式 <code>/handoff</code> 或 @ <code>session_handoff</code>，只写路径指针，<strong>不能</strong>代替下一会话的 verify。</li>
@@ -298,7 +298,8 @@
             <tr><th>阶段</th><th>命令</th><th>门</th><th>谁主导</th><th>模型</th></tr>
           </thead>
           <tbody>
-            <tr><td>规范</td><td><code>/speckit-specify</code></td><td>环境隔离闸门 → 背景充分性</td><td><strong>业务</strong>给方向；AI 归类五维输入</td><td><span class="badge-opus">Opus</span></td></tr>
+            <tr><td>立项</td><td><code>/speckit-charter</code></td><td>后 <code>gate-charter.sh</code></td><td><strong>业务</strong>确认方向/范围/业务逻辑</td><td><span class="badge-opus">Opus</span></td></tr>
+            <tr><td>规范</td><td><code>/speckit-specify</code></td><td>环境隔离 + <code>gate-spec-coverage</code></td><td>AI 从 charter 扩写 spec</td><td><span class="badge-opus">Opus</span></td></tr>
             <tr><td>澄清</td><td><code>/speckit-clarify</code></td><td>后 <code>gate-clarify.sh</code></td><td><strong>业务</strong>答（一次一题；trivial 可跳过提问仍扫门）</td><td><span class="badge-opus">Opus</span></td></tr>
             <tr><td>技术栈闸门</td><td>对话 → <code>stack.yml</code></td><td><code>gate-stack.sh</code></td><td><strong>你/业务</strong>拍板 To-Be；AI 只推荐须你点头</td><td><span class="badge-opus">Opus</span></td></tr>
             <tr><td>计划</td><td><code>/speckit-plan</code></td><td>后 <code>activate-dimensions.sh</code></td><td>AI</td><td><span class="badge-opus">Opus</span></td></tr>
@@ -315,11 +316,18 @@
 
       <section id="howto">
         <h2>2. 每步怎么跑好</h2>
+        <h3>charter</h3>
+        <ul>
+          <li>在写 spec 前把方向、范围、成功标准、<strong>领域业务逻辑</strong>写入 <code>charter.md</code>（≤2 页）。</li>
+          <li>背景 abc 不足 → brainstorming <strong>一次一问</strong>；确认后 <code>charter.yml</code> 设 <code>confirmed: true</code>，跑 <code>gate-charter.sh</code>。</li>
+          <li><strong>trivial</strong> 压缩内容；门照跑；仍须 confirmed。</li>
+        </ul>
         <h3>specify</h3>
         <ul>
-          <li><strong>环境隔离闸门</strong>（起始一次）：AI 列出可能生效的全局规则/Memories，问你 <code>ignore|selective|adopt</code>，写入 <code>stack.yml</code> 的 <code>global_prefs</code>。</li>
-          <li><strong>背景充分性</strong>：首条自然叙述即可（五维是归类 lens，见 <a href="#input-when">2.1</a>）。够则起草 spec；不够则 <strong>一次一问</strong>，此阶段<strong>不写 spec</strong>。</li>
-          <li>在 <code>stack.yml</code> 写明 <code>complexity: trivial|standard|complex</code>（拿不准用更高档）。</li>
+          <li><strong>上游</strong>：须已 <code>gate-charter</code> PASS（P0/unlock；不在 specify gates 重复登记）。</li>
+          <li><strong>环境隔离闸门</strong>：问你 <code>ignore|selective|adopt</code>，写入 <code>global-prefs.yml</code>（<code>confirmed: true</code>）。</li>
+          <li>从 <code>charter.md</code> 扩写 spec；Background 写摘要 + 链接，不复制全文。Post-Draft Ping 补 ②③。</li>
+          <li>在 <code>stack.yml</code> 或 charter 写明 <code>complexity</code>（拿不准用更高档）。</li>
         </ul>
         <h3>clarify</h3>
         <p>AI <strong>一次一题</strong>、带 ★ 首选；可 <code>yes</code>/<code>A</code> 采纳。spec 已写入的内容<strong>只答当题</strong>，勿每轮重贴全文。
@@ -352,25 +360,25 @@
         <p>
           五维度是<strong>信息类型的归类框架</strong>（给你和 AI 对齐「这段话属于哪类」），
           <strong>不是</strong>首条消息的强制格式，也<strong>不会框定</strong> AI 的提问与起草方式。
-          与工作流一致的真实机制是：<code>/speckit-specify</code> 先做<strong>背景充分性判断</strong> → 不足则 brainstorming <strong>一次一问</strong>（此阶段不写 spec）→ 充分后才起草，并把功能清单当<strong>待验证假设</strong>处理。
+          与工作流一致的真实机制是：<code>/speckit-charter</code> 先做<strong>背景充分性判断 (abc)</strong> → 不足则 brainstorming <strong>一次一问</strong>（此阶段不写 charter/spec）→ 充分后起草 <code>charter.md</code> 并经你确认 → <code>gate-charter.sh</code> PASS 后，<code>/speckit-specify</code> 从 charter <strong>扩写</strong> spec，功能清单仍当<strong>待验证假设</strong>处理。
         </p>
 
         <div class="callout callout-info">
           <strong>首条消息怎么写？</strong>自然叙述即可，不必套五段标题。你想到什么说什么；AI 负责抽取、归类、识别缺口。
-          只有材料很多、想少来回时，才<strong>可选</strong>用文末分段模板。仅产品名/方向时，别硬凑五维——交给 AI 追问。
+          只有材料很多、想少来回时，才<strong>可选</strong>用文末分段模板。仅产品名/方向时，别硬凑五维——交给 AI 在 <strong>charter</strong> 阶段追问。
         </div>
 
-        <h3>specify 实际检查的（硬闸门，仅三项）</h3>
-        <p>这与五维度不同：闸门只看背景是否够起草，不要求你按五类排版。</p>
+        <h3>charter 实际检查的（硬闸门 abc + 确认）</h3>
+        <p>这与五维度不同：闸门只看背景是否够起草 charter，不要求你按五类排版。</p>
         <ul>
           <li>(a) 背景/动机 — 为谁、痛什么、现状</li>
           <li>(b) 目标 / 可验收的成功标准</li>
           <li>(c) 关键约束</li>
         </ul>
-        <p>三项齐备（或你明确说「就这些，按你理解起草」）→ 直接出 spec；任一缺失 → AI 一次一问，<strong>不动笔写 spec</strong>。<strong>首条不问卷 ②③④⑤</strong>（见下「分阶段唤醒」）。</p>
+        <p>三项齐备（或你明确说「就这些，按你理解起草」）→ 直接出 charter；任一缺失 → AI 一次一问，<strong>不动笔写 charter/spec</strong>。确认后 <code>charter.yml</code> 设 <code>confirmed: true</code> 并跑 <code>gate-charter.sh</code>（含 <code>complexity</code> 与 <code>## Core Business Logic</code>）。<strong>charter 首条不问卷 ②③④⑤</strong>（见下「分阶段唤醒」）。</p>
 
         <h3 id="input-staged">分阶段唤醒 + ②③④⑤ Q&A 落盘</h3>
-        <p>先出 <strong>spec v0</strong>，再在边界处按需补问；每次只问一维；<strong>对话与 spec 均显式展示问与答</strong>。</p>
+        <p>先经 <strong>charter</strong> 锁定 ① 与粗粒度范围/业务逻辑，再出 <strong>spec v0</strong>（从 charter 扩写），在边界处按需补问；每次只问一维；<strong>对话与 spec 均显式展示问与答</strong>。</p>
         <table>
           <thead><tr><th>检查点</th><th>补问维度</th><th>对话格式</th><th>落盘</th></tr></thead>
           <tbody>
@@ -390,7 +398,7 @@
             <tr>
               <td><span class="tier-bg">① 业务背景与目标</span></td>
               <td>干系人、问题陈述、现状、业务目标、<strong>可度量的成功标准</strong>、合规/预算/里程碑等约束</td>
-              <td>spec：Background、Goals、Success Criteria、Constraints</td>
+              <td><code>charter.md</code>：Background、Goals、Success Criteria、Constraints；<code>spec.md</code> 摘要 + 链接 charter</td>
               <td>界定「为何做」；<strong>不展开功能清单</strong>（功能归 ③④）</td>
             </tr>
             <tr>
@@ -441,7 +449,7 @@
 
         <h3>何时提供（总表）</h3>
         <p>图例：<span class="when-yes">● 闸门/阶段需要</span>　<span class="when-opt">○ 有则自然提到</span>　<span class="when-ondemand">△ 按需</span><br />
-          <strong>specify 首条</strong>：不必按列填表；AI 从自由叙述中识别下列类型，缺 (a)(b)(c) 则追问。</p>
+          <strong>charter 首条</strong>：不必按列填表；AI 从自由叙述中识别下列类型，缺 (a)(b)(c) 则在 charter 追问。</p>
         <table>
           <thead>
             <tr>
@@ -455,12 +463,20 @@
           </thead>
           <tbody>
             <tr>
-              <td><strong>specify 首条</strong></td>
+              <td><strong>charter 首条</strong></td>
               <td><span class="when-yes">●</span> 闸门 (a)(b)(c) 须覆盖；可混在自然叙述里</td>
-              <td><span class="when-opt">○</span> 有则提（如「目前用 Excel」），AI 记入 As-Is</td>
-              <td><span class="when-opt">○</span> 有则提，AI 标 MUST / 基线</td>
-              <td><span class="when-opt">○</span> 有则提，AI 标假设 / 待澄清</td>
-              <td><span class="when-opt">○</span> 影响范围时给摘要；大文件不必首轮全倒</td>
+              <td><span class="when-opt">○</span> 有则提（如「目前用 Excel」），记入 charter As-Is</td>
+              <td><span class="when-opt">○</span> 有则提，记入 charter In-Scope / 粗粒度范围</td>
+              <td><span class="when-opt">○</span> 有则提，标待裁定（细化为 spec 假设）</td>
+              <td><span class="when-opt">○</span> 影响方向时给摘要；大文件不必首轮全倒</td>
+            </tr>
+            <tr>
+              <td><strong>specify 首条</strong></td>
+              <td><span class="when-ondemand">△</span> 上游 charter 已确认；仅纠错</td>
+              <td><span class="when-opt">○</span> charter 有则摘要引用；补遗漏现状</td>
+              <td><span class="when-opt">○</span> 从 charter 扩写 MUST / Stories</td>
+              <td><span class="when-opt">○</span> 从 charter 扩写假设条目</td>
+              <td><span class="when-opt">○</span> 环境隔离闸门单独裁定（global-prefs）</td>
             </tr>
             <tr>
               <td><strong>specify 起草后</strong></td>
@@ -510,12 +526,20 @@
           <thead><tr><th>阶段</th><th>你该做什么</th><th>不要做什么</th></tr></thead>
           <tbody>
             <tr>
+              <td><strong>charter 首条</strong></td>
+              <td>
+                <strong>自然语言</strong>即可；abc 三项够或你主动放行 → AI 起草 charter（含业务逻辑节）。<br />
+                确认后 <code>charter.yml</code> + <code>gate-charter.sh</code>
+              </td>
+              <td>跳过 charter 直接写 spec；仅产品名却让 AI 猜满 charter；把候选功能当已定范围</td>
+            </tr>
+            <tr>
               <td><strong>specify 首条</strong></td>
               <td>
-                <strong>自然语言</strong>即可；闸门三项够或你主动放行 → AI 起草。<br />
-                材料多时可<strong>选用</strong>文末模板；可附 <code>就这些，按你理解起草</code>
+                上游 <code>gate-charter</code> 已 PASS；从 charter 扩写 spec（Background 摘要 + 链接）。<br />
+                环境隔离（global-prefs）在 specify 开场裁定
               </td>
-              <td>强行要求用户按五维填表；仅产品名却让 AI 猜满 spec；把候选功能当已定 MUST</td>
+              <td>重写 charter 范围；复制 charter 全文进 spec；未确认 charter 就起草 spec</td>
             </tr>
             <tr>
               <td><strong>clarify</strong></td>
@@ -560,14 +584,14 @@
 
         <h3>两种协作模式</h3>
         <ul>
-          <li><strong>业务方主导、材料齐备</strong>：自然叙述或选用模板 → AI 判断充分后出 spec → clarify 主攻候选需求裁定与基线验收细化 → 技术栈闸门定<strong>新系统</strong>技术栈（② 的 Excel 等只作迁移参考）。</li>
+          <li><strong>业务方主导、材料齐备</strong>：自然叙述或选用模板 → charter 确认方向与业务逻辑 → specify 扩写 spec → clarify 主攻候选需求裁定与基线验收细化 → 技术栈闸门定<strong>新系统</strong>技术栈（② 的 Excel 等只作迁移参考）。</li>
           <li><strong>研发代办采集</strong>：把业务口述整理成自然语言（可选用五维模板自查有无缺口）；clarify 只问<strong>产品意图与范围</strong>（一次一题），技术项在 plan 前由研发与 AI 闭环。</li>
         </ul>
       </section>
 
       <section id="complexity">
         <h2>3. 复杂度分级</h2>
-        <p>在 <code>stack.yml</code> 写明 <code>complexity</code>（通常 specify 阶段首次写入，可后续手动升降）：</p>
+        <p>在 <code>charter.yml</code> 或 <code>stack.yml</code> 写明 <code>complexity</code>（charter 阶段首次判定并写入 <code>charter.yml</code>；<code>gate-charter.sh</code> 校验 charter 侧必填，stack 可同步；可后续手动升降）：</p>
         <ul>
           <li><strong>trivial</strong>（须全满足：单关注点、无登录、无超本地持久化、可回滚、无外部 API、无新架构）→
             跳过 clarify <strong>提问</strong>（<code>gate-clarify.sh</code> 仍跑）、analyze 轻量核对、技术栈可沿用既有栈（仍须 <code>confirmed: true</code>）、<strong>verify 仍必跑</strong>（US+PF 档）。</li>
@@ -581,6 +605,9 @@
         <table>
           <thead><tr><th>何时</th><th>脚本</th><th>拦什么 / 做什么</th></tr></thead>
           <tbody>
+            <tr><td>charter 结束</td><td><code>gate-charter.sh</code></td><td><code>charter.yml</code> <code>confirmed: true</code> + <code>complexity</code> + <code>charter.md</code>（含 Core Business Logic；无模板占位）</td></tr>
+            <tr><td>specify 开场</td><td>（对话）+<code>global-prefs.yml</code></td><td>环境隔离：ignore/selective/adopt</td></tr>
+            <tr><td>specify 结束</td><td><code>gate-global-prefs.sh</code></td><td><code>global-prefs.yml</code> 已 <code>confirmed: true</code>（或 legacy <code>stack.yml</code>）</td></tr>
             <tr><td>specify 结束</td><td><code>gate-spec-coverage.sh</code></td><td><code>spec-coverage.yml</code> + Input Q&A + Assumptions 标签 + 模板占位扫描</td></tr>
             <tr><td>进 plan 前</td><td><code>gate-clarify.sh</code></td><td>残留 <code>[NEEDS CLARIFICATION]</code> / TODO + delegate 覆盖度门</td></tr>
             <tr><td>进 plan/tasks/implement 前</td><td><code>gate-stack.sh</code></td><td>stack 缺 <code>confirmed/form</code>；standard/complex 缺 <code>global_prefs</code>；ui+cli；Tauri+cli；⑤ 环境 Q&A</td></tr>
@@ -641,6 +668,8 @@
 .specify/scripts/bash/check-prerequisites.sh --json --paths-only
 
 # 门 + verify 同步
+.specify/scripts/bash/gate-charter.sh         # charter 结束：章程确认 + complexity
+.specify/scripts/bash/gate-global-prefs.sh   # specify 结束：环境隔离 global-prefs.yml
 .specify/scripts/bash/gate-spec-coverage.sh   # specify 结束：Post-Draft Ping 覆盖度
 .specify/scripts/bash/gate-clarify.sh
 .specify/scripts/bash/gate-stack.sh
@@ -659,7 +688,7 @@
       </section>
 
       <footer class="doc-footer">
-        workflow · 使用手册（与 constitution v1.9.0 / orchestration 对齐）· <a href="ARCHITECTURE.html">架构文档</a>
+        workflow · 使用手册（与 constitution v1.12.0 / orchestration 对齐）· <a href="ARCHITECTURE.html">架构文档</a>
       </footer>
     </main>
   </div>

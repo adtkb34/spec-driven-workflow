@@ -13,6 +13,7 @@ dimensions:
     source: local
     reviewed: 2026-06-02
     bind_phase:
+    - charter
     - specify
     - clarify
   product_taste:
@@ -23,6 +24,7 @@ dimensions:
     source: local
     reviewed: 2026-06-02
     bind_phase:
+    - charter
     - specify
     - clarify
     - plan

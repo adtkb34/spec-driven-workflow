@@ -10,16 +10,37 @@ ceremony:
   minimal: "P0 self-check only; no repeated opening"
   session: "opening once per implement session; then P0 only"
 phases:
-  specify:
+  charter:
     ceremony: full
     brainstorming_default: partial_background
     questions:
-      - "当前 P1 phase 是否为 specify？FEATURE_DIR 从 feature.json 解析了吗？"
-      - "背景 abc 闸门过了吗？首条是否未做 ②③④⑤ 五维连问？"
-      - "Post-Draft Ping：覆盖摘要出了吗？②③ 缺口 Q→A 已展示并落盘 Input Q&A？"
-      - "stack.complexity 应为 trivial/standard/complex？global_prefs 闸门做了吗？"
-      - "结束本阶段 run-log 的 --skills 是否只含实际 Read 的 skill？"
+      - "当前 P1 phase 是否为 charter？FEATURE_DIR 解析了吗？"
+      - "背景 abc 够起草 charter 吗？不足则 brainstorming 一次一问"
+      - "charter.md 含 Core Business Logic（主流程/规则/优先级）吗？"
+      - "已向用户展示 charter 并获确认？charter.yml confirmed:true？"
+      - "stack.complexity / charter.yml complexity 档位对吗（trivial/standard/complex）？"
+      - "结束本阶段 run-log 的 --scripts 含 gate-charter.sh 吗？"
     forbid_summary:
+      - "未 Read speckit-charter 就写 charter"
+      - "在 charter 写 User Story / FR / 数据源 / 技术栈"
+  specify:
+    ceremony: full
+    brainstorming_default: partial_background
+    opening_order:
+      - "① 上游 charter 已 gate-charter PASS（P0 自检，不在 specify gates 重复登记）"
+      - "② 环境隔离闸门（global-prefs.yml confirmed:true）"
+      - "③ 从 charter.md 扩写 spec / Post-Draft Ping / gate-global-prefs + gate-spec-coverage"
+    questions:
+      - "【硬序①】charter 已 confirmed 且 gate-charter PASS？"
+      - "【硬序②】环境隔离：global-prefs.yml 已 confirmed:true 且 gate-global-prefs PASS？"
+      - "当前 P1 phase 是否为 specify？FEATURE_DIR 从 feature.json 解析了吗？"
+      - "已 Read charter.md 扩写 spec（未改写 charter 已批大方向）？"
+      - "Post-Draft Ping：覆盖摘要出了吗？②③ 缺口 Q→A 已展示并落盘 Input Q&A？"
+      - "stack.complexity 应为 trivial/standard/complex？stack.yml 的 global_prefs 与 global-prefs.yml 一致？"
+      - "结束本阶段 run-log 的 --scripts 是否只含实际跑过的 gate？"
+    forbid_summary:
+      - "charter 未确认就写 spec"
+      - "未做环境隔离闸门就写 spec"
       - "未 Read speckit-specify 就写 spec"
       - "registry 维度名当 --skills 误报"
   clarify:

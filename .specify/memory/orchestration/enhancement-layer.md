@@ -9,6 +9,13 @@
 4. **`source_grounding` vs `grill-with-docs` 分工**：前者 implement 期查框架/库 API；后者 plan/analyze 期拷问 spec/plan/ADR。
 5. **`session_handoff`**（meta，仅 `/handoff` 或显式 @ 触发）：OS 临时目录、只指针不复制、不得替代 verify 证据。
 
-## 环境隔离闸门（specify 起始必做）
+## 环境隔离闸门（specify 起始必做 · 硬序①）
 
-全局偏好处冲突链最低优先级。specify 起始扫描 User Rules / AGENTS.md / Memories，问用户 **ignore(默认) / selective / adopt**，写入 `stack.yml` 的 `global_prefs`。trivial 且无检测到来源时可默认 ignore 免打扰。
+全局偏好处冲突链最低优先级。**在背景 brainstorming 之前**完成（无 `FEATURE_DIR` 也要先向用户提问）：
+
+1. 扫描 User Rules / Team Rules / `AGENTS.md` / Memories，列出可能来源。
+2. 用户选 **ignore(默认) / selective / adopt**（不替用户决定）。
+3. 建特性目录后写入 `FEATURE_DIR/global-prefs.yml`（`decision` + `confirmed: true`）；`stack.yml` 存在时同步 `global_prefs` / `global_prefs_allow`。
+4. `gate-global-prefs.sh` PASS 后才可结束 specify（`gate-spec-coverage` 会 delegate）。
+
+trivial 且无额外全局来源时，仍须落盘 `confirmed: true` + `decision: ignore`（可同轮确认，不可跳过文件）。

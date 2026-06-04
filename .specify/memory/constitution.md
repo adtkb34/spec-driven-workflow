@@ -48,7 +48,9 @@ AI 不得用「加开关让用户选」来回避本该自己定的实现细节�
 **全局偏好**（Cursor User Rules / Team Rules、`AGENTS.md`、Cursor Memories、Copilot 用户级 memories）
 常驻且跨项目，处于冲突裁决链**最低优先级**。默认立场为**隔离**：未经用户在「环境隔离闸门」
 明确放行前，一律不采纳；即便放行，也不得覆盖上位规则（阶段门 / constitution / 维度 skill）。
-闸门在 **specify 起始**触发一次，决策记入 `FEATURE_DIR/stack.yml` 的 `global_prefs`，本特性沿用。
+闸门在 **specify 起始（硬序①，先于背景 brainstorming）**触发一次：决策记入
+`FEATURE_DIR/global-prefs.yml`（`confirmed: true`），并同步 `stack.yml` 的 `global_prefs`；本特性沿用。
+`gate-global-prefs.sh` 机械校验，非仅文档自觉。
 
 ## 模型路由（Model Routing）
 
@@ -153,7 +155,9 @@ AI 不得用「加开关让用户选」来回避本该自己定的实现细节�
 
 红线不只写在文里，关键项由 `.specify/scripts/bash/` 下脚本**机械判定**，非零退出即拦截：
 
-- `gate-spec-coverage.sh`：specify 结束 / 进 plan 前校验 Post-Draft Ping（`spec-coverage.yml`、Input Q&A、Assumptions 标签、非模板占位）。
+- `gate-charter.sh`：charter 结束；`charter.yml` 已 `confirmed: true` + `charter.md` 非模板。进 specify 前须 PASS（P0/unlock，不在 specify 重复登记）。
+- `gate-global-prefs.sh`：specify 结束 / 进 plan 前校验环境隔离已用户确认（`global-prefs.yml` 或 legacy `stack.yml`）。
+- `gate-spec-coverage.sh`：specify 结束 / 进 plan 前校验 Post-Draft Ping（`spec-coverage.yml`、Input Q&A、Assumptions 标签、非模板占位）；delegate `gate-global-prefs`。
 - `gate-clarify.sh`：进 plan 前扫 spec 残留 `[NEEDS CLARIFICATION]`/TODO，并 delegate 覆盖度门。
 - `gate-stack.sh`：校验 `stack.yml` 存在且 `confirmed: true`、有 `form:`。
 - `activate-dimensions.sh`：读 `stack.yml`+registry，**确定性**输出该激活的条件维度。
@@ -248,7 +252,9 @@ implement→verify→deliver→再 release。外部发布工具（gstack `/ship`
 各阶段执行前应核对：是否遵守模型路由、是否触发用户闸门、是否过技术栈闸门、
 是否守住质量红线、是否通过 verify 阶段的可执行 DoD。
 
-**Version**: 1.10.0 | **Ratified**: 2026-06-02 | **Last Amended**: 2026-06-04
+**Version**: 1.12.0 | **Ratified**: 2026-06-02 | **Last Amended**: 2026-06-04
+<!-- v1.12.0: charter 阶段 + gate-charter.sh + charter.md/yml；abc/业务逻辑迁出 specify；gate 仅 charter.gates_before_next 登记一次 -->
+<!-- v1.11.0: gate-global-prefs.sh + global-prefs.yml（specify 开场硬序①；无 FEATURE_DIR 也要先问）；gate-spec-coverage/clarify delegate；create-new-feature 种子模板 -->
 <!-- v1.10.0: gate-spec-coverage.sh + spec-coverage.yml（Post-Draft Ping 机械门）；gate-clarify 聚合覆盖度；gate-stack ⑤ Q&A；gate-analyze 查 plan.md；Assumptions [ASSUMPTION]/[CONFIRMED] -->
 <!-- v1.8.0: 发布范式拆为 deliver(交付·跟 MR 自动·per-feature)+ release(上线·仅用户触发·聚合多 feature·仓库级账本)两环节;新增 gate-deliver.sh + deliver-template.yml;gate-release.sh 改仓库级 .releases/<version>/(校验 includes 都已 deliver);registry 拆 delivery+release 维度;上线只由用户触发不自动上生产 -->
 <!-- v1.7.0: 新增「release 阶段与发布范式」(verify 之后、不替代 verify) + release-profiles.md(7 原则/6 阶段/T0–T3/回滚矩阵) + gate-release.sh + speckit-release 维度(编排+生成器) + stack.yml release 段;综合 DORA/Progressive Delivery/trunk-based/GitHub Environments/expand-contract/feature flags/自动回滚 -->

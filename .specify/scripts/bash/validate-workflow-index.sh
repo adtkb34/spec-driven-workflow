@@ -23,7 +23,7 @@ pi = YAML.load_file(ENV['PI']) || {}
 reg = File.exist?(ENV['REG']) ? (YAML.load_file(ENV['REG']) || {}) : {}
 
 errors = []
-known_phases = %w[specify clarify plan analyze tasks implement verify deliver release]
+known_phases = %w[charter specify clarify plan analyze tasks implement verify deliver release]
 wf_phases = wf['phases'] || {}
 pi_phases = pi['phases'] || {}
 

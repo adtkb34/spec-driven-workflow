@@ -11,8 +11,9 @@ alwaysApply: true
 
 1. **P0**：`phase-brief.sh`（只带提问，见 `phase-index.yml`）
 2. **P1**：对应 `speckit-*` SKILL.md（full ceremony 时等用户「继续」再 Read）
-3. **P2**：gate 脚本 + `phase.yml` 状态；`--unlock-status` **实时**查 gate，**不**在 phase.yml 存 unlock 布尔
-4. **P2 通过后** → `activate-dimensions.sh` → 注入 registry **D1 summary**（非 P2 前全文加载）
+3. **流水线硬序**：**charter**（abc + 业务逻辑 + confirmed）→ **specify**（global-prefs → spec → Ping）→ clarify → …
+4. **P2**：gate 脚本 + `phase.yml` 状态；`--unlock-status` **实时**查 gate，**不**在 phase.yml 存 unlock 布尔
+5. **P2 通过后** → `activate-dimensions.sh` → 注入 registry **D1 summary**（非 P2 前全文加载）
 
 命名：**P0–P2** = 阶段树；**D1–D3** = registry 渐进披露（summary / SKILL.md / references/）。
 
@@ -35,7 +36,7 @@ alwaysApply: true
 
 | 算力档 | 阶段 | Cursor 典型 | Copilot 典型 |
 |--------|------|-------------|--------------|
-| **strong** | specify/clarify/plan/analyze/tasks/verify/release | Opus 系 | GPT-4.1 / o 系列 |
+| **strong** | charter/specify/clarify/plan/analyze/tasks/verify/release | Opus 系 | GPT-4.1 / o 系列 |
 | **fast** | implement / deliver 脚本执行 | Composer 系 | 较快档 |
 | **strong↑** | implement 卡住 / verify 裁决 / release go-no-go | 临时升 Opus | 换更强档 |
 

@@ -99,6 +99,8 @@ gates = (wf_entry['gates_before_next'] || []).map { |g| run_gate(script_dir, g) 
 # Live unlock hints for common transitions
 unlock = {}
 case phase
+when 'charter'
+  unlock['can_enter_specify'] = run_gate(script_dir, 'gate-charter.sh')[:pass]
 when 'plan'
   unlock['can_enter_plan'] = run_gate(script_dir, 'gate-clarify.sh')[:pass] &&
                              run_gate(script_dir, 'gate-stack.sh')[:pass]
@@ -120,6 +122,7 @@ out = {
   'orchestration_chapters' => wf_entry['orchestration_chapters'] || [],
   'artifacts' => wf_entry['artifacts'] || [],
   'questions' => pi_entry['questions'] || [],
+  'opening_order' => pi_entry['opening_order'] || [],
   'forbid_summary' => pi_entry['forbid_summary'] || [],
   'brainstorming_default' => pi_entry['brainstorming_default'],
   'gates_before_next' => gates,
@@ -166,8 +169,23 @@ puts "- ceremony: #{ceremony} | model_tier: #{wf_entry['model_tier']}"
 puts "- skill: #{wf_entry['skill']}"
 puts "- mode: #{mode}"
 puts ""
+unless out['opening_order'].empty?
+  puts "### specify 开场硬序（不可颠倒）"
+  out['opening_order'].each { |s| puts "- #{s}" }
+  puts ""
+end
 puts "### P0 自检（须自问，勿跳过）"
 out['questions'].each_with_index { |q, i| puts "#{i + 1}. #{q}" }
+if phase == 'specify'
+  charter = run_gate(script_dir, 'gate-charter.sh')
+  gpref = run_gate(script_dir, 'gate-global-prefs.sh')
+  puts ""
+  puts "### 上游 charter（实时）"
+  puts "- gate-charter.sh: #{charter[:status]}#{charter[:status] == 'FAIL' ? ' ← 须先 /speckit-charter 并 confirmed:true' : ''}"
+  puts ""
+  puts "### 环境隔离门（实时）"
+  puts "- gate-global-prefs.sh: #{gpref[:status]}#{gpref[:status] == 'FAIL' ? ' ← specify 开场须先问用户并写 global-prefs.yml' : ''}"
+end
 unless out['forbid_summary'].empty?
   puts ""
   puts "### 禁止"

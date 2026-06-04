@@ -5,6 +5,25 @@
 
 ---
 
+## 2026-06-04 · specify 开场漏问环境隔离（global_prefs）
+
+**触发**：用户问「为啥不问是否忽略全局偏好」；Agent 将「无 FEATURE_DIR / 背景 abc 未过」误判为可跳过环境隔离闸门。
+
+**根因（到层）**：`speckit-specify` 有文书要求，但 (a) 与背景闸门顺序未写死；(b) 落盘路径绑 `stack.yml` 导致「没目录就不问」；(c) **specify 阶段无机械门**，仅靠 `gate-stack` 在 plan 前才拦。
+
+**补丁（机制优先）**：
+| 产物 | 作用 |
+|------|------|
+| `gate-global-prefs.sh` | `global-prefs.yml` 须 `confirmed: true`（legacy：`stack.yml` global_prefs） |
+| `global-prefs-template.yml` + `create-new-feature` 种子 | 建特性目录即有落盘位 |
+| `phase-index` `opening_order` + `speckit-specify` 硬序①② | 隔离先于 brainstorming |
+| `gate-spec-coverage` / `gate-clarify` delegate | specify 结束与进 plan 双保险 |
+| `run-gate-tests.sh` | PASS/BLOCK 回归 |
+
+**结账**：✅ constitution v1.11.0 + workflow-index + phase-brief 实时显示 gate-global-prefs 状态。
+
+---
+
 ## 2026-06-03 · 在未验证的用户模型上抢先加交互机器
 
 **触发**：clarify 提问方式的一轮讨论（先加、锐评、再全撤）。

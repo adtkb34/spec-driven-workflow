@@ -17,7 +17,7 @@
 4. **full ceremony**：5 行开场 + 等用户「继续」→ 再 `Read` speckit 阶段 SKILL.md（P1）。
 5. **命中即用**：维度在注册表中有 skill → 直接使用，不询问。
 
-**specify 特例（背景充分性闸门）**：用户若只给产品名/方向、未给足背景/目标/成功标准，**禁止靠行业常识猜满 spec**。必须先激活 `requirements`（brainstorming）**一次一问**补齐背景。详见 `speckit-specify` 的 Background-Sufficiency Gate。
+**specify 特例（背景充分性闸门）** → 已迁到 **charter** 阶段：用户若只给产品名/方向，在 `/speckit-charter` 用 brainstorming **一次一问**补齐 abc，确认后 `/speckit-specify` 从 `charter.md` 扩写 spec。详见 `speckit-charter` / `speckit-specify`。
 
 ## 未命中 → 用户闸门
 

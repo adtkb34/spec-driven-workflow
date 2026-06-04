@@ -1,0 +1,6 @@
+# charter.yml — 立项章程确认（机器可读，同 stack.yml / global-prefs.yml 模式）
+# /speckit-charter 与用户确认方向后设 confirmed: true
+version: 1
+complexity: standard   # trivial | standard | complex
+confirmed: false
+# confirmed_at: ""     # ISO8601 when user confirms

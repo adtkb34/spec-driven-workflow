@@ -5,7 +5,7 @@ workflow:
   version: "2.0.0"
   author: "workflow"
   description: >-
-    specify → clarify → (技术栈闸门) → plan → analyze → tasks → implement → verify
+    charter → specify → clarify → (技术栈闸门) → plan → analyze → tasks → implement → verify
     →（release.enabled 时）deliver →（仅用户触发）release。各阶段间由 .specify/scripts/bash/
     下的可执行门(退出码即真相)拦截。
 
@@ -50,6 +50,12 @@ inputs:
     enum: ["full", "backend-only", "frontend-only"]
 
 steps:
+  - id: charter
+    command: speckit.charter
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "{{ inputs.spec }}"
+
   - id: specify
     command: speckit.specify
     integration: "{{ inputs.integration }}"

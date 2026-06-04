@@ -1,0 +1,8 @@
+# Principle VII — 环境隔离闸门（specify 开场与用户确认后写入）
+# Agent：扫描 User Rules / AGENTS.md / Memories → 让用户选 decision → 设 confirmed: true
+version: 1
+decision: ignore # ignore | selective | adopt
+confirmed: false
+# confirmed_at: "" # ISO8601 when user confirms
+global_prefs_allow: [] # selective only — one item per line in YAML list
+sources_noted: [] # optional: human-readable scan (e.g. cursor_user_rules)

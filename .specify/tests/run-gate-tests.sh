@@ -93,6 +93,16 @@ confirmed: true
 YAML
 }
 
+global_prefs_ok() {
+    cat > "$FIX/global-prefs.yml" <<'YAML'
+version: 1
+decision: ignore
+confirmed: true
+confirmed_at: "2026-06-04T12:00:00Z"
+global_prefs_allow: []
+YAML
+}
+
 spec_pass_standard() {
     cat > "$FIX/spec.md" <<'SPEC'
 # Feature: Gate Test
@@ -261,47 +271,165 @@ input_qa_count:
 YAML
 }
 
+charter_ok() {
+    cat > "$FIX/charter.yml" <<'YAML'
+version: 1
+complexity: standard
+confirmed: true
+YAML
+}
+
+charter_pass_md() {
+    cat > "$FIX/charter.md" <<'CHARTER'
+# Feature Charter: Gate Test
+
+## Background & Stakeholders
+
+Planning team needs better scheduling visibility.
+
+## As-Is Summary
+
+Excel-based scheduling today.
+
+## Goals & Success Criteria
+
+Reduce planning cycle time by 30% within Q3.
+
+## In-Scope / Out-of-Scope
+
+**In scope:**
+
+- Daily production scheduling for one plant
+
+**Out of scope:**
+
+- Multi-factory optimization
+
+## Core Business Logic
+
+### Main Flow
+
+1. Import orders
+2. Assign capacity
+3. Publish plan
+
+### Business Rules
+
+- Due date takes priority over setup cost
+
+### Conflict Priorities
+
+- Customer A rush orders override default sequence
+
+## Deferred to Spec / Plan
+
+- FR and acceptance in spec.md
+CHARTER
+}
+
+echo "── gate-charter ──────────────────────────────────────────"
+FIX="$(new_fixture charter-pass)"
+charter_ok
+charter_pass_md
+expect "confirmed + charter.md -> PASS" 0 gate-charter.sh
+
+FIX="$(new_fixture charter-no-yml)"
+charter_pass_md
+expect "无 charter.yml -> BLOCK" 1 gate-charter.sh
+
+FIX="$(new_fixture charter-unconfirmed)"
+charter_pass_md
+printf 'version: 1\ncomplexity: standard\nconfirmed: false\n' > "$FIX/charter.yml"
+expect "confirmed:false -> BLOCK" 1 gate-charter.sh
+
+FIX="$(new_fixture charter-template)"
+charter_ok
+cp "$BASH_DIR/../../templates/charter-template.md" "$FIX/charter.md" 2>/dev/null || true
+expect "模板占位 -> BLOCK" 1 gate-charter.sh
+
 echo "── gate-clarify ──────────────────────────────────────────"
 FIX="$(new_fixture clarify-pass)"
 spec_pass_standard
 spec_coverage_standard
+global_prefs_ok
 expect_or_skip_ruby "clean spec + coverage -> PASS" 0 gate-clarify.sh
 
 FIX="$(new_fixture clarify-block)"
 spec_pass_standard
 spec_coverage_standard
+global_prefs_ok
 printf '\nThe limit is [NEEDS CLARIFICATION: how many?].\n' >> "$FIX/spec.md"
 expect "残留 NEEDS CLARIFICATION -> BLOCK" 1 gate-clarify.sh
 
 FIX="$(new_fixture clarify-todo)"
 spec_pass_standard
 spec_coverage_standard
+global_prefs_ok
 printf '\nTODO: decide auth.\n' >> "$FIX/spec.md"
 expect "残留 TODO -> BLOCK" 1 gate-clarify.sh
 
 FIX="$(new_fixture clarify-coverage-missing)"
 spec_pass_standard
+global_prefs_ok
 expect "占位符干净但无 coverage -> BLOCK" 1 gate-clarify.sh
+
+echo "── gate-global-prefs ─────────────────────────────────────"
+FIX="$(new_fixture gprefs-pass)"
+global_prefs_ok
+expect "global-prefs confirmed -> PASS" 0 gate-global-prefs.sh
+
+FIX="$(new_fixture gprefs-unconfirmed)"
+cat > "$FIX/global-prefs.yml" <<'YAML'
+version: 1
+decision: ignore
+confirmed: false
+YAML
+expect "confirmed:false -> BLOCK" 1 gate-global-prefs.sh
+
+FIX="$(new_fixture gprefs-selective-empty)"
+cat > "$FIX/global-prefs.yml" <<'YAML'
+version: 1
+decision: selective
+confirmed: true
+global_prefs_allow: []
+YAML
+expect "selective 无 allow 项 -> BLOCK" 1 gate-global-prefs.sh
+
+FIX="$(new_fixture gprefs-legacy-stack)"
+stack_ok
+expect "legacy stack.yml global_prefs -> PASS" 0 gate-global-prefs.sh
+
+FIX="$(new_fixture gprefs-missing)"
+expect "无 prefs 且无 stack -> BLOCK" 1 gate-global-prefs.sh
 
 echo "── gate-spec-coverage ────────────────────────────────────"
 FIX="$(new_fixture coverage-pass)"
 spec_pass_standard
 spec_coverage_standard
+global_prefs_ok
 expect_or_skip_ruby "完整 spec + coverage -> PASS" 0 gate-spec-coverage.sh
 
 FIX="$(new_fixture coverage-no-yml)"
 spec_pass_standard
+global_prefs_ok
 expect_or_skip_ruby "无 spec-coverage.yml -> BLOCK" 1 gate-spec-coverage.sh
+
+FIX="$(new_fixture coverage-no-gprefs)"
+spec_pass_standard
+spec_coverage_standard
+expect_or_skip_ruby "无 global-prefs -> BLOCK" 1 gate-spec-coverage.sh
 
 FIX="$(new_fixture coverage-template-bg)"
 cp "$BASH_DIR/../../templates/spec-template.md" "$FIX/spec.md" 2>/dev/null || \
   printf '# Feature\n[Background, goals and success criteria for stakeholders]\n## Input Q&A\n### ②\n- **Q:** x **A:** y\n' > "$FIX/spec.md"
 spec_coverage_standard
+global_prefs_ok
 expect_or_skip_ruby "Background 仍为模板 -> BLOCK" 1 gate-spec-coverage.sh
 
 FIX="$(new_fixture coverage-no-assumption-tag)"
 spec_pass_standard
 spec_coverage_standard
+global_prefs_ok
 ruby -e "
   f = ENV['F']
   s = File.read(f)
@@ -313,16 +441,19 @@ expect_or_skip_ruby "Assumptions 无标签(standard) -> BLOCK" 1 gate-spec-cover
 FIX="$(new_fixture coverage-assumption-tag-ok)"
 spec_pass_standard
 spec_coverage_standard
+global_prefs_ok
 expect_or_skip_ruby "Assumptions 有 [ASSUMPTION] -> PASS" 0 gate-spec-coverage.sh
 
 FIX="$(new_fixture coverage-no-qa)"
 printf '# Feature\n## Background & Goals\nDone.\n' > "$FIX/spec.md"
 spec_coverage_standard
+global_prefs_ok
 expect_or_skip_ruby "Input Q&A 缺失 -> BLOCK" 1 gate-spec-coverage.sh
 
 FIX="$(new_fixture coverage-trivial-pass)"
 spec_pass_trivial
 spec_coverage_trivial
+global_prefs_ok
 expect_or_skip_ruby "trivial waived + coverage -> PASS" 0 gate-spec-coverage.sh
 
 echo "── gate-stack ────────────────────────────────────────────"
@@ -424,6 +555,33 @@ if [[ "$HAS_RUBY" -eq 1 ]]; then
     fi
 else
     printf '  \033[33mskip\033[0m %-44s (no ruby)\n' "workflow-index + phase-index"; skip=$((skip + 1))
+fi
+
+echo "── workflow-index charter gate placement ─────────────────"
+WI="$SCRIPT_DIR/../workflows/workflow-index.yml"
+if [[ -f "$WI" ]]; then
+    charter_count=$(grep -c 'gate-charter\.sh' "$WI" 2>/dev/null || echo 0)
+    if [[ "$charter_count" -eq 1 ]]; then
+        printf '  \033[32mok\033[0m   %-44s\n' "gate-charter.sh appears once"; pass=$((pass + 1))
+    else
+        printf '  \033[31mFAIL\033[0m %-44s (count=%s)\n' "gate-charter.sh singleton" "$charter_count"; fail=$((fail + 1))
+    fi
+    if [[ "$HAS_RUBY" -eq 1 ]]; then
+        if ruby -ryaml -e '
+wi = ARGV[0]
+d = YAML.load_file(wi)
+gates = (d.dig("phases", "specify", "gates_before_next") || [])
+exit(gates.include?("gate-charter.sh") ? 1 : 0)
+' "$WI" >/dev/null 2>&1; then
+            printf '  \033[32mok\033[0m   %-44s\n' "specify gates omit gate-charter"; pass=$((pass + 1))
+        else
+            printf '  \033[31mFAIL\033[0m %-44s\n' "specify gates omit gate-charter"; fail=$((fail + 1))
+        fi
+    else
+        printf '  \033[33mskip\033[0m %-44s (no ruby)\n' "specify gates omit gate-charter"; skip=$((skip + 1))
+    fi
+else
+    printf '  \033[31mFAIL\033[0m %-44s\n' "workflow-index.yml missing"; fail=$((fail + 1))
 fi
 
 echo "── phase-brief ───────────────────────────────────────────"

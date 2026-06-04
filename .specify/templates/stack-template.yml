@@ -45,7 +45,7 @@ release:
   gate: B             # 上线生产闸：A 全自动直发 | B 生产前留人工确认（业务系统默认 B）
   target: ""          # 目标环境标识（如 VPS host / cloud-run service / vercel project）
 
-# —— 环境隔离决策（环境隔离闸门 · specify 起始与用户确认后写入）——
+# —— 环境隔离决策（与 global-prefs.yml 同步；specify 硬序① 用户确认后写入）——
 # 决定全局偏好如何对待，避免污染本工作流。全局偏好来源包括：
 #   Cursor User Rules / Team Rules、项目根或子目录 AGENTS.md、Cursor Memories、Copilot 用户级 memories。
 # 取值：

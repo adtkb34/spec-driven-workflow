@@ -53,41 +53,43 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Phase Entry (P0 → P2 → P1 · specify)
 
-Before Outline / Background-Sufficiency Gate:
+Before Outline:
 
 1. Run `.specify/scripts/bash/phase-brief.sh --phase specify` (resume: `--questions-only`).
 2. Self-answer P0 questions from `phase-index.yml` (questions only, no rule dump).
 3. **full ceremony**: 5-line opening (phase, FEATURE_DIR, unlock/gates, model tier, next step) → **wait for user「继续」** before reading this SKILL body (if not already loaded).
-4. Run P2 gates as needed; `phase-brief.sh --unlock-status` for live status (not cached in phase.yml).
-5. **After P2 pass** → `activate-dimensions.sh --phase specify` → inject D1 summaries only.
-6. End with `run-log.sh phase --phase specify ...`（`--scripts` 须含 `gate-spec-coverage.sh`）。Orchestration: `triage-fast-track.md`, `enhancement-layer.md`.
+4. **硬序① — Charter upstream**：`charter.md` + `charter.yml` 须已 `confirmed: true` 且 `gate-charter.sh` PASS（见 phase-brief unlock；**不在 specify gates 重复登记**）。Read 已确认 charter，**不得改写** charter 已批大方向。
+5. **硬序② — Context Isolation Gate**（见下节）：写 `global-prefs.yml`（`confirmed: true`）。可与 spec 追问同轮，**不得跳过**。
+6. Run P2 gates as needed; `phase-brief.sh --unlock-status` for live status (not cached in phase.yml).
+7. **After P2 pass** → `activate-dimensions.sh --phase specify` → inject D1 summaries only.
+8. End with `run-log.sh phase --phase specify ...`（`--scripts` 须含 `gate-global-prefs.sh` 与 `gate-spec-coverage.sh`）。Orchestration: `triage-fast-track.md`, `enhancement-layer.md`.
 
 ## Outline
 
 The text the user typed after `/speckit-specify` in the triggering message **is** the feature description. Assume you always have it available in this conversation even if `$ARGUMENTS` appears literally below. Do not ask the user to repeat it unless they provided an empty command.
 
-## Background-Sufficiency Gate (本工作流硬约束 · 写 spec 前必做)
+## Context Isolation Gate (环境隔离闸门 · specify 硬序② · 必做)
 
-**在写 spec 之前，先判断背景是否足够。禁止仅凭一个产品名/方向（如「做一个生产排产软件」）就靠行业常识猜满一整份 spec。**
+在 **从 charter 扩写 spec 之前**完成（详见 `enhancement-layer.md`），防止全局偏好污染本工作流:
 
-1. **充分性自检（仅 ① 闸门 abc）**：用户输入是否已包含足以起草的 (a) 背景/动机（为谁、解决什么痛），(b) 目标/成功标准，(c) 关键约束？
-   - **首条不问卷 ②③④⑤**：若用户已自然提到 As-Is/基线/候选/环境 → 归类写入 spec 对应节；未提到 → **不在首条主动五维连问**，留到 **Post-Draft Coverage Ping**（spec v0 后）或 clarify/技术栈闸门。
-   - **禁止**：按五维标题让用户填表；仅产品名时猜满 spec。
-2. **不足 → 先 brainstorming，不动笔**：若上述任一缺失，激活 `requirements` 维度（brainstorming，`/Users/kevinx/.claude/skills/brainstorming/SKILL.md`），**一次只问一个问题**，聚焦 purpose / constraints / success criteria，**逐条补齐背景后再进入下面的 Outline**。此阶段**不创建目录、不写 spec**。
-3. **充分 → 直接起草**：用户已给足背景（或明确说「背景就这些，按你的理解起草」）时，跳过提问，直接执行 Outline。
-4. **第一性原理**：把用户的预想功能点当作**待验证假设**而非定稿；对「因竞品有而做」的功能，在 spec 用 `[NEEDS CLARIFICATION]` 或「明确不做」标注，不默默纳入。
+- 检测并向用户列出可能生效的全局偏好来源（Cursor User/Team Rules、`AGENTS.md`、Cursor/Copilot Memories）。
+- 一次确认本特性如何处理：**ignore（默认隔离）/ selective / adopt**；默认 `ignore`，不替用户决定。
+- **落盘**（建特性目录时 `create-new-feature.sh` 会种子模板；否则 `cp .specify/templates/global-prefs-template.yml`）：
+  - `FEATURE_DIR/global-prefs.yml`：`decision` + `confirmed: true` +（selective 时）`global_prefs_allow`
+  - 若已有 `stack.yml`，同步 `global_prefs` / `global_prefs_allow` 与上一致
+- specify 结束前须 `gate-global-prefs.sh` PASS。
+- 任何档位下，全局偏好都**不得**覆盖阶段门 / constitution / 维度 skill / verify DoD。
 
-仅在背景充分（或用户主动放行）后，才执行下面的 Outline。
+## Charter upstream (已确认 · 只读)
 
-## Context Isolation Gate (环境隔离闸门 · specify 起始必做)
+**`FEATURE_DIR/charter.md` 须在 `/speckit-charter` 阶段经用户确认。** specify 从 charter 扩写 spec，不重复 abc 补齐（已迁到 charter）。
 
-在起草 spec 前,还须过**环境隔离闸门**(详见 `workflow-orchestration` 同名章节),防止全局偏好污染本工作流:
-- 检测并向用户列出可能生效的全局偏好来源(Cursor User/Team Rules、`AGENTS.md`、Cursor/Copilot Memories)。
-- 一次确认本特性如何处理:**忽略(默认隔离) / 选择性引入 / 全部引入**;默认 `ignore`,不替用户决定。
-- 决策写入 `FEATURE_DIR/stack.yml` 的 `global_prefs` / `global_prefs_allow`,本特性沿用。
-- 任何档位下,全局偏好都**不得**覆盖阶段门 / constitution / 维度 skill / verify DoD。
+1. Read `charter.md` + `charter.yml`；`## Background & Goals` 写 **3–5 句摘要 + 链接** `charter.md`，不复制全文。
+2. User Stories / FR / Input Q&A / Post-Draft Ping 逻辑不变；**首条不问卷 ②③④⑤**（未提到则留 Ping）。
+3. 若发现与 charter 冲突，**先改 charter（回 /speckit-charter）**，不得在 spec 静默扩 scope。
+4. **第一性原理**：把用户功能点当待验证假设；未确认项用 `[NEEDS CLARIFICATION]` 或 Assumptions 标签。
 
-Given that feature description, do this:
+Given that feature description and confirmed charter, do this:
 
 1. **Generate a concise short name** (2-4 words) for the feature:
    - Analyze the feature description and extract the most meaningful keywords
@@ -122,6 +124,7 @@ Given that feature description, do this:
 
    **Create the directory and spec file**:
    - `mkdir -p SPECIFY_FEATURE_DIRECTORY`
+   - Copy `.specify/templates/global-prefs-template.yml` to `SPECIFY_FEATURE_DIRECTORY/global-prefs.yml` if missing; set `decision` + `confirmed: true` per hard-order ① (or run `create-new-feature.sh` which seeds it)
    - Copy `.specify/templates/spec-template.md` to `SPECIFY_FEATURE_DIRECTORY/spec.md` as the starting point
    - Set `SPEC_FILE` to `SPECIFY_FEATURE_DIRECTORY/spec.md`
    - Persist the resolved path to `.specify/feature.json`:

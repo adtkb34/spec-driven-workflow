@@ -26,6 +26,12 @@ if [[ ! -f "$FEATURE_SPEC" ]]; then
     exit 2
 fi
 
+if ! RUN_LOG_SUPPRESS=1 "$SCRIPT_DIR/gate-global-prefs.sh" >/dev/null 2>&1; then
+    echo "GATE-SPEC-COVERAGE: BLOCKED — 环境隔离闸门未通过(见 gate-global-prefs.sh)" >&2
+    "$SCRIPT_DIR/gate-global-prefs.sh" 2>&1 | sed 's/^/    /'
+    exit 1
+fi
+
 command -v ruby >/dev/null 2>&1 || { echo "GATE-SPEC-COVERAGE: ERROR requires ruby (yaml)" >&2; exit 2; }
 
 export FEATURE_SPEC COVERAGE_FILE STACK_FILE

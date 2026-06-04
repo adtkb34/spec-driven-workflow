@@ -403,7 +403,7 @@
           <pre class="mermaid">
 flowchart TB
     subgraph L1["编排层 · Orchestration"]
-        SK["GitHub Spec Kit + 自有阶段\nspecify → clarify → plan → analyze → tasks → implement → verify →(deliver)→(release)"]
+        SK["GitHub Spec Kit + 自有阶段\ncharter → specify → clarify → plan → analyze → tasks → implement → verify →(deliver)→(release)"]
     end
     subgraph L2["能力层 · Capability"]
         REG[("本地精选\nSkill 注册表")]
@@ -540,8 +540,11 @@ flowchart TB
         <table>
           <thead><tr><th>时机</th><th>脚本</th><th>判定（非零即停）</th></tr></thead>
           <tbody>
-            <tr><td>specify 结束</td><td><code>gate-spec-coverage.sh</code></td><td><code>spec-coverage.yml</code> + Input Q&A + Assumptions 标签</td></tr>
-            <tr><td>进 plan 前</td><td><code>gate-clarify.sh</code></td><td>spec 无残留模糊点 + delegate 覆盖度门</td></tr>
+            <tr><td>charter 结束</td><td><code>gate-charter.sh</code></td><td><code>charter.yml</code> <code>confirmed: true</code> + <code>complexity</code> + <code>charter.md</code>（含 Core Business Logic；无模板占位）</td></tr>
+            <tr><td>specify 开场</td><td>（对话）+<code>global-prefs.yml</code></td><td>环境隔离：用户选 ignore/selective/adopt；无特性目录也要先问</td></tr>
+            <tr><td>specify 结束</td><td><code>gate-global-prefs.sh</code></td><td><code>global-prefs.yml</code> 已 <code>confirmed: true</code>（或 legacy <code>stack.yml</code>）</td></tr>
+            <tr><td>specify 结束</td><td><code>gate-spec-coverage.sh</code></td><td><code>spec-coverage.yml</code> + Input Q&A + Assumptions；delegate global-prefs</td></tr>
+            <tr><td>进 plan 前</td><td><code>gate-clarify.sh</code></td><td>spec 无残留模糊点 + delegate global-prefs + 覆盖度门</td></tr>
             <tr><td>plan/tasks/implement 前</td><td><code>gate-stack.sh</code></td><td><code>stack.yml</code> 存在、<code>confirmed: true</code>、有 <code>form</code></td></tr>
             <tr><td>plan 后 / analyze</td><td><code>activate-dimensions.sh</code></td><td>读 <code>stack.yml</code>+registry，<strong>确定性</strong>输出该激活的条件维度</td></tr>
             <tr><td>analyze</td><td><code>gate-analyze.sh</code></td><td>聚合：无模糊点 / 栈已确认 / 用户故事在 tasks 有落点 / 激活维度路径可解析</td></tr>
@@ -579,7 +582,7 @@ flowchart TB
         </table>
 
         <h3 id="gates-fasttrack">快速通道（trivial）</h3>
-        <p><code>specify</code> 起始按判据给出 <code>complexity</code>。<strong>trivial</strong>（单关注点 / 无登录 / 无超本地持久化 / 可回滚 / 不接外部 API / 不引入新架构）走快速通道：跳过 clarify 提问（仍跑 <code>gate-clarify.sh</code> 自动扫描）、analyze 轻量核对、技术栈沿用既有可免暂停，但<strong>仍必过 verify 轻量档</strong>。standard/complex 走全流水线；拿不准默认按更高档。</p>
+        <p><code>charter</code> 阶段按判据写入 <code>charter.yml</code> 的 <code>complexity</code>（可同步 <code>stack.yml</code>；<code>gate-charter.sh</code> 校验）。<strong>trivial</strong>（单关注点 / 无登录 / 无超本地持久化 / 可回滚 / 不接外部 API / 不引入新架构）走快速通道：跳过 clarify 提问（仍跑 <code>gate-clarify.sh</code> 自动扫描）、analyze 轻量核对、技术栈沿用既有可免暂停，但<strong>仍必过 verify 轻量档</strong>。standard/complex 走全流水线；拿不准默认按更高档。</p>
 
         <pre class="mermaid">
 flowchart TB
@@ -886,13 +889,15 @@ flowchart TB
 ├── USAGE.html                     # 使用手册（速查卡 + 需求输入五维度含 As-Is 现状 + 门/红线）
 ├── .specify/                      # Spec Kit 工作区
 │   ├── memory/
-│   │   ├── constitution.md        # 全局原则 + 模型路由 + 质量红线 + 维护再入（v1.9.0）
+│   │   ├── constitution.md        # 全局原则 + 模型路由 + 质量红线 + 维护再入（v1.12.0）
 │   │   ├── verify-profiles.md     # 按 form 的 DoD 档位（web/desktop/cli/service/library/pipeline）
 │   │   ├── verify-sync.md         # spec/tasks → verify 覆盖对齐协议
 │   │   └── release-profiles.md    # 发布范式（7 原则 / 6 阶段 / T0–T3 / 回滚矩阵）
 │   ├── scripts/bash/              # 可执行门（退出码即真相）
+│   │   ├── gate-charter.sh        #   charter 结束：章程确认 + complexity
+│   │   ├── gate-global-prefs.sh   #   specify：环境隔离 global-prefs.yml
 │   │   ├── gate-spec-coverage.sh  #   specify 结束：Post-Draft Ping 覆盖度
-│   │   ├── gate-clarify.sh        #   进 plan 前：占位符 + 覆盖度
+│   │   ├── gate-clarify.sh        #   进 plan 前：占位符 + global-prefs + 覆盖度
 │   │   ├── gate-stack.sh          #   stack.yml 存在/confirmed/form/global_prefs
 │   │   ├── gate-analyze.sh        #   聚合一致性 / 覆盖 / 维度路径
 │   │   ├── gate-verify.sh         #   跑 verify.yml + 扫残留 + 选 DoD 档 + GUI closure

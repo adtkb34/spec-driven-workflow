@@ -402,6 +402,30 @@ if [ "$DRY_RUN" != true ]; then
         fi
     fi
 
+    PREFS_FILE="$FEATURE_DIR/global-prefs.yml"
+    if [ ! -f "$PREFS_FILE" ]; then
+        PREFS_TEMPLATE="$REPO_ROOT/.specify/templates/global-prefs-template.yml"
+        if [ -f "$PREFS_TEMPLATE" ]; then
+            cp "$PREFS_TEMPLATE" "$PREFS_FILE"
+        fi
+    fi
+
+    CHARTER_FILE="$FEATURE_DIR/charter.md"
+    if [ ! -f "$CHARTER_FILE" ]; then
+        CHARTER_TEMPLATE="$REPO_ROOT/.specify/templates/charter-template.md"
+        if [ -f "$CHARTER_TEMPLATE" ]; then
+            cp "$CHARTER_TEMPLATE" "$CHARTER_FILE"
+        fi
+    fi
+
+    CHARTER_YML="$FEATURE_DIR/charter.yml"
+    if [ ! -f "$CHARTER_YML" ]; then
+        CHY_TEMPLATE="$REPO_ROOT/.specify/templates/charter-template.yml"
+        if [ -f "$CHY_TEMPLATE" ]; then
+            cp "$CHY_TEMPLATE" "$CHARTER_YML"
+        fi
+    fi
+
     # Inform the user how to persist the feature variable in their own shell
     printf '# To persist: export SPECIFY_FEATURE=%q\n' "$BRANCH_NAME" >&2
 fi

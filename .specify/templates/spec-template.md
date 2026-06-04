@@ -11,8 +11,8 @@
 ## Background & Goals *(mandatory)*
 
 <!--
-  (a) 为谁、解决什么痛、(b) 可验收的成功标准、(c) 关键约束。
-  ① 业务背景与目标 — 首条自然叙述或 brainstorming 补齐；不强制五维填表。
+  ① 业务背景与目标 — 完整版见同目录 charter.md（/speckit-charter 确认后只读）。
+  此处写 3–5 句摘要 + 链接；勿复制 charter 全文。
 -->
 
 [Background, goals, success criteria, constraints]
