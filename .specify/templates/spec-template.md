@@ -8,6 +8,49 @@
 
 **Input**: User description: "$ARGUMENTS"
 
+## Background & Goals *(mandatory)*
+
+<!--
+  (a) 为谁、解决什么痛、(b) 可验收的成功标准、(c) 关键约束。
+  ① 业务背景与目标 — 首条自然叙述或 brainstorming 补齐；不强制五维填表。
+-->
+
+[Background, goals, success criteria, constraints]
+
+## Current State (As-Is) *(include when applicable; omit section if greenfield)*
+
+<!--
+  ② 现状实现：今天怎么做（Excel/老系统/人工流程），非新系统 To-Be。
+  与 Input Q&A ② 同步；无存量时可写「无存量流程（greenfield）」。
+-->
+
+[How work is done today, tools, pain points]
+
+## Input Q&A (②③④⑤)
+
+<!--
+  仅记录针对 ②③④⑤ 的显式问答；① 见 Background & Goals；waived 也记一条。
+  格式: - **Q:** … **A:** … _(phase, YYYY-MM-DD)_
+-->
+
+> 仅记录针对 ②③④⑤ 的显式问答；① 背景见上文；waived 也记一条。
+
+### ② 现状实现（As-Is）
+
+- _(none yet)_
+
+### ③ 基线功能需求
+
+- _(none yet)_
+
+### ④ 候选功能需求
+
+- _(none yet)_
+
+### ⑤ 环境与依赖上下文
+
+- _(none yet)_
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--

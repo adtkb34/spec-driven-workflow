@@ -70,7 +70,9 @@ The text the user typed after `/speckit-specify` in the triggering message **is*
 
 **在写 spec 之前，先判断背景是否足够。禁止仅凭一个产品名/方向（如「做一个生产排产软件」）就靠行业常识猜满一整份 spec。**
 
-1. **充分性自检**：用户输入是否已包含足以起草的 (a) 背景/动机（为谁、解决什么痛、现状），(b) 目标/成功标准，(c) 关键约束？
+1. **充分性自检（仅 ① 闸门 abc）**：用户输入是否已包含足以起草的 (a) 背景/动机（为谁、解决什么痛），(b) 目标/成功标准，(c) 关键约束？
+   - **首条不问卷 ②③④⑤**：若用户已自然提到 As-Is/基线/候选/环境 → 归类写入 spec 对应节；未提到 → **不在首条主动五维连问**，留到 **Post-Draft Coverage Ping**（spec v0 后）或 clarify/技术栈闸门。
+   - **禁止**：按五维标题让用户填表；仅产品名时猜满 spec。
 2. **不足 → 先 brainstorming，不动笔**：若上述任一缺失，激活 `requirements` 维度（brainstorming，`/Users/kevinx/.claude/skills/brainstorming/SKILL.md`），**一次只问一个问题**，聚焦 purpose / constraints / success criteria，**逐条补齐背景后再进入下面的 Outline**。此阶段**不创建目录、不写 spec**。
 3. **充分 → 直接起草**：用户已给足背景（或明确说「背景就这些，按你的理解起草」）时，跳过提问，直接执行 Outline。
 4. **第一性原理**：把用户的预想功能点当作**待验证假设**而非定稿；对「因竞品有而做」的功能，在 spec 用 `[NEEDS CLARIFICATION]` 或「明确不做」标注，不默默纳入。
@@ -261,6 +263,36 @@ Given that feature description, do this:
         9. Re-run validation after all clarifications are resolved
 
    d. **Update Checklist**: After each validation iteration, update the checklist file with current pass/fail status
+
+## Post-Draft Coverage Ping（spec v0 后 · `run-log` 前必做）
+
+**在 spec v0 写入磁盘后、Mandatory Post-Execution Hooks / run-log 之前执行。** 先起草再补问，不框死首条。
+
+### 1. 内部覆盖打标
+
+扫描 spec v0 + 对话，对五维打标：`Covered | Partial | Missing | Waived`（内部 map）。向用户输出 **≤8 行覆盖摘要**（表格或列表）。
+
+### 2. 补问范围（一次一维 · 对话 + 落盘）
+
+- **本阶段只补 ② ③**（缺口且影响进 clarify 时）；**④ 不在此逐条问**（clarify 主战场）；**⑤ 不在此问 To-Be 技术栈**（plan 前 stack gate）。
+- **standard/complex**：② 或 ③ 为 Missing 且无 Waived → **最多各补 1 问**。
+- **trivial**：可压缩；若无 ② 且无 legacy 迹象 → 记 waived Q→A，不追问。
+
+### 3. 对话展示格式（硬约束）
+
+提问：`**【② 现状 As-Is】问：** …`（③ 用 **【③ 基线功能需求】**）。用户答后复述：`**【② …】答：** …`
+
+### 4. spec 落盘（与正文同步）
+
+每条 Q→A 写入 `## Input Q&A (②③④⑤)` 对应小节：`- **Q:** … **A:** … _(specify ping, YYYY-MM-DD)_`；并更新 `Current State (As-Is)` / Stories / Assumptions。跳过 → `A: waived（…）` 仍记一条。
+
+**trivial 且无补问**：仍写 `- **Q:** 有无 As-Is/候选/环境材料？ **A:** 无，按 trivial 跳过 _(waived)_`。
+
+### 5. run-log
+
+`--note` 可写 `Input Q&A 新增 N 条（②×… ③×…）`。
+
+**Ping 未完成（仍有 Missing ②③ 且用户未 waived）时**：不得宣称 specify 完成或进入 clarify。
 
 ## Mandatory Post-Execution Hooks
 

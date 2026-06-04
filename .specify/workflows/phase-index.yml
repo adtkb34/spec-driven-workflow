@@ -15,9 +15,9 @@ phases:
     brainstorming_default: partial_background
     questions:
       - "当前 P1 phase 是否为 specify？FEATURE_DIR 从 feature.json 解析了吗？"
-      - "背景是否充分？若否，brainstorming 下一问是什么（一次一问）？"
+      - "背景 abc 闸门过了吗？首条是否未做 ②③④⑤ 五维连问？"
+      - "Post-Draft Ping：覆盖摘要出了吗？②③ 缺口 Q→A 已展示并落盘 Input Q&A？"
       - "stack.complexity 应为 trivial/standard/complex？global_prefs 闸门做了吗？"
-      - "本阶段禁止写 plan/代码/技术栈定稿 — 是否清楚？"
       - "结束本阶段 run-log 的 --skills 是否只含实际 Read 的 skill？"
     forbid_summary:
       - "未 Read speckit-specify 就写 spec"
@@ -25,8 +25,10 @@ phases:
   clarify:
     ceremony: full
     questions:
+      - "是否先扫 ④ 候选再扫 ②③ Partial？"
+      - "每条 clarify Q→A 是否双写 Clarifications + Input Q&A（带 [②③④]）？"
+      - "对话里是否展示了【④/③/②】问与答？"
       - "spec.md 残留 [NEEDS CLARIFICATION] 吗？"
-      - "每条澄清是否已写回 spec？"
       - "trivial 是否仍跑 gate-clarify 扫描？"
     forbid_summary:
       - "跳过写回 spec 直接 plan"
@@ -34,7 +36,8 @@ phases:
     ceremony: full
     questions:
       - "gate-clarify 与 gate-stack 是否已 PASS（或 unlock-status 显示可进 plan）？"
-      - "技术栈闸门已与用户确认且 stack.confirmed=true？"
+      - "技术栈闸门 ⑤/②迁移：每条 Q→A 已展示并落盘 Input Q&A ⑤（及 ② 迁移）？"
+      - "stack.confirmed=true 且结论与 Q&A 一致？"
       - "plan 是否只写 HOW，不把未确认栈写进 spec Assumptions？"
     forbid_summary:
       - "stack 未确认就写 plan.md"
