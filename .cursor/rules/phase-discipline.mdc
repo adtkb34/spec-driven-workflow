@@ -1,0 +1,15 @@
+---
+alwaysApply: true
+---
+
+# Phase Discipline (P0 · ≤20 lines)
+
+Before any `/speckit-*` phase work:
+
+1. Resolve `FEATURE_DIR` from `.specify/feature.json`; read `phase.yml` → `current_phase`.
+2. Run `.specify/scripts/bash/phase-brief.sh --phase <phase>` (or `--questions-only` after P2 pass).
+3. **P0 = self-check questions only** — do NOT load rule bodies from this file; answers come from gates/files.
+4. **Conflict chain**: gate > constitution > registry > external skill > global prefs (default ignore).
+5. **After P2 gates PASS** → inject registry D1 summaries via `activate-dimensions.sh`; then Read D2 only when needed.
+6. **full ceremony**: 5-line opening + wait for user「继续」before Read phase SKILL.md.
+7. **Run-log at phase end** is mandatory; `--skills` = actually Read/executed only.

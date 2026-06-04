@@ -1,0 +1,84 @@
+# Workflow index — phase tree (P-layer). Dimension disclosure uses D1/D2/D3 in registry.
+# Validated by: .specify/scripts/bash/validate-workflow-index.sh
+version: 1
+naming:
+  phase_layers: [P0, P1, P2]
+  dimension_layers: [D1, D2, D3]
+  p0: meta questions (.cursor/rules/phase-discipline.mdc)
+  p1: speckit phase skill
+  p2: gates + stack.yml + phase.yml state
+  d1: registry summary
+  d2: SKILL.md full
+  d3: references/
+phases:
+  specify:
+    skill: .cursor/skills/speckit-specify/SKILL.md
+    orchestration_chapters: [triage-fast-track.md, enhancement-layer.md]
+    gates_before_next: []
+    gates_note: "进 plan 前须 gate-clarify + 技术栈闸门(写 stack.confirmed)"
+    artifacts: [spec.md, stack.yml, checklists/requirements.md, phase.yml]
+    model_tier: strong
+    ceremony: full
+  clarify:
+    skill: .cursor/skills/speckit-clarify/SKILL.md
+    orchestration_chapters: []
+    gates_before_next: [gate-clarify.sh]
+    artifacts: [spec.md]
+    model_tier: strong
+    ceremony: full
+  plan:
+    skill: .cursor/skills/speckit-plan/SKILL.md
+    orchestration_chapters: [stack-gate.md, gates.md]
+    gates_before_next: [gate-clarify.sh, gate-stack.sh]
+    artifacts: [plan.md]
+    model_tier: strong
+    ceremony: full
+  analyze:
+    skill: .cursor/skills/speckit-analyze/SKILL.md
+    orchestration_chapters: [gates.md]
+    gates_before_next: [gate-analyze.sh]
+    artifacts: []
+    model_tier: strong
+    ceremony: minimal
+  tasks:
+    skill: .cursor/skills/speckit-tasks/SKILL.md
+    orchestration_chapters: [gates.md]
+    gates_before_next: [gate-stack.sh]
+    artifacts: [tasks.md]
+    model_tier: strong
+    ceremony: minimal
+  implement:
+    skill: .cursor/skills/speckit-implement/SKILL.md
+    orchestration_chapters: [enhancement-layer.md]
+    gates_before_next: [gate-analyze.sh]
+    artifacts: []
+    model_tier: fast
+    ceremony: session
+  verify:
+    skill: .cursor/skills/speckit-verify/SKILL.md
+    orchestration_chapters: [verify-deliver-release.md, gates.md]
+    gates_before_next: [gate-verify.sh]
+    artifacts: [verify.md]
+    model_tier: strong
+    ceremony: full
+  deliver:
+    skill: .cursor/skills/speckit-release/SKILL.md
+    orchestration_chapters: [verify-deliver-release.md]
+    gates_before_next: [gate-deliver.sh, gate-verify.sh]
+    artifacts: [deliver.md]
+    model_tier: fast
+    ceremony: minimal
+  release:
+    skill: .cursor/skills/speckit-release/SKILL.md
+    orchestration_chapters: [verify-deliver-release.md]
+    gates_before_next: [gate-release.sh]
+    artifacts: []
+    model_tier: strong
+    ceremony: full
+modes:
+  amend:
+    description: bug fix / change on existing feature — no new specify from scratch
+    required_gate: gate-verify.sh
+    skip_phases: [specify]
+  handoff:
+    description: resume session — read phase.yml then phase-brief --unlock-status

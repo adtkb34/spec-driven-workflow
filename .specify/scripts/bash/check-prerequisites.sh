@@ -147,6 +147,8 @@ if [[ -d "$CONTRACTS_DIR" ]] && [[ -n "$(ls -A "$CONTRACTS_DIR" 2>/dev/null)" ]]
 fi
 
 [[ -f "$QUICKSTART" ]] && docs+=("quickstart.md")
+PHASE_YML="$FEATURE_DIR/phase.yml"
+[[ -f "$PHASE_YML" ]] && docs+=("phase.yml")
 
 # Include tasks.md if requested and it exists
 if $INCLUDE_TASKS && [[ -f "$TASKS" ]]; then

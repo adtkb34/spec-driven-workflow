@@ -51,6 +51,13 @@ You **MUST** consider the user input before proceeding (if not empty).
     ```
 - If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
 
+## Phase Entry (P0 → P2 → P1 · analyze)
+
+1. `phase-brief.sh --phase analyze --questions-only` (**minimal ceremony** — P0 only, no repeated opening).
+2. P2: `gate-analyze.sh` must PASS before implement.
+3. After P2 → `activate-dimensions.sh --phase analyze` → verify dimension activation vs stack.
+4. End: `run-log.sh phase --phase analyze ...`.
+
 ## Goal
 
 Identify inconsistencies, duplications, ambiguities, and underspecified items across the three core artifacts (`spec.md`, `plan.md`, `tasks.md`) before implementation. This command MUST run only after `/speckit-tasks` has successfully produced a complete `tasks.md`.

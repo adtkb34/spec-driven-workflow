@@ -51,6 +51,13 @@ You **MUST** consider the user input before proceeding (if not empty).
     ```
 - If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
 
+## Phase Entry (P0 → P2 → P1 · implement)
+
+1. `phase-brief.sh --phase implement` — **session ceremony**: 5-line opening **once per implement session**, then P0 only.
+2. P2: `gate-analyze.sh` must PASS (`--unlock-status`).
+3. After P2 → `activate-dimensions.sh --phase implement` → D1; Read D2 for active coding dimensions only.
+4. End: `run-log.sh phase --phase implement ...`. Chapter: `enhancement-layer.md`.
+
 ## Outline
 
 1. Run `.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks` from repo root and parse FEATURE_DIR and AVAILABLE_DOCS list. All paths must be absolute. For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").

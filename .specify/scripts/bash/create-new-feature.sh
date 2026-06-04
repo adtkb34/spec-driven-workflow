@@ -367,6 +367,23 @@ if [ "$DRY_RUN" != true ]; then
 
     mkdir -p "$FEATURE_DIR"
 
+    PHASE_FILE="$FEATURE_DIR/phase.yml"
+    if [ ! -f "$PHASE_FILE" ]; then
+        PHASE_TEMPLATE="$REPO_ROOT/.specify/templates/phase-template.yml"
+        if [ -f "$PHASE_TEMPLATE" ]; then
+            cp "$PHASE_TEMPLATE" "$PHASE_FILE"
+            if command -v ruby >/dev/null 2>&1; then
+                ruby -ryaml -e "
+                  f = '$PHASE_FILE'
+                  d = YAML.load_file(f) || {}
+                  d['feature_directory'] = '$FEATURE_DIR'
+                  d['phase_updated_at'] = Time.now.utc.iso8601
+                  File.write(f, d.to_yaml)
+                " 2>/dev/null || true
+            fi
+        fi
+    fi
+
     if [ ! -f "$SPEC_FILE" ]; then
         TEMPLATE=$(resolve_template "spec-template" "$REPO_ROOT") || true
         if [ -n "$TEMPLATE" ] && [ -f "$TEMPLATE" ]; then

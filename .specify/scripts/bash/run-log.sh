@@ -259,6 +259,28 @@ cmd_gate() {
     printf -- '- `%s` · **GATE** `%s` → %s  _(机械证据)_\n' "$(ts)" "$name" "$status" >> "$LOG_FILE"
 }
 
+sync_phase_yml() {
+    local phase_name="$1"
+    local phase_file="$FEATURE_DIR/phase.yml"
+    command -v ruby >/dev/null 2>&1 || return 0
+    [[ -d "$FEATURE_DIR" ]] || return 0
+    local template="$REPO_ROOT/.specify/templates/phase-template.yml"
+    if [[ ! -f "$phase_file" && -f "$template" ]]; then
+        cp "$template" "$phase_file"
+    fi
+    PHASE_FILE="$phase_file" PHASE_NAME="$phase_name" FEATURE_DIR="$FEATURE_DIR" ruby <<'RUBY' 2>/dev/null || true
+require 'yaml'
+require 'time'
+path = ENV['PHASE_FILE']
+data = File.exist?(path) ? (YAML.load_file(path) || {}) : {}
+data['current_phase'] = ENV['PHASE_NAME']
+data['feature_directory'] = ENV['FEATURE_DIR']
+data['phase_updated_at'] = Time.now.utc.iso8601
+data['last_phase_completed_at'] = Time.now.utc.iso8601
+File.write(path, data.to_yaml)
+RUBY
+}
+
 verify_artifacts() {
     # Renders one bullet per artifact with a machine existence check + clickable markdown link.
     local csv="$1" item target link
@@ -323,6 +345,7 @@ cmd_phase() {
         printf -- '- 产物 _(机械核验)_: —\n' >> "$LOG_FILE"
     fi
     printf -- '- 备注 _(自述)_: %s\n' "${note:-—}" >> "$LOG_FILE"
+    sync_phase_yml "$phase"
     echo "RUN-LOG: 已追加 PHASE($phase) → $LOG_FILE"
 }
 

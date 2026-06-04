@@ -51,6 +51,14 @@ You **MUST** consider the user input before proceeding (if not empty).
     ```
 - If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
 
+## Phase Entry (P0 → P2 → P1 · clarify)
+
+1. `phase-brief.sh --phase clarify` → P0 self-check.
+2. **full ceremony**: 5-line opening → wait「继续」before main flow.
+3. P2: ensure prior specify complete; `gate-clarify.sh` before plan transition.
+4. After P2 → `activate-dimensions.sh --phase clarify` → D1 only.
+5. End: `run-log.sh phase --phase clarify ...`.
+
 ## Outline
 
 Goal: Detect and reduce ambiguity or missing decision points in the active feature specification and record the clarifications directly in the spec file.

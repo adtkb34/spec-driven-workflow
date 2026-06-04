@@ -553,13 +553,16 @@ flowchart TB
         <h3 id="gates-stack">机器可读 stack.yml 驱动条件维度</h3>
         <p>技术栈闸门把用户确认的方向写入 <code>FEATURE_DIR/stack.yml</code>（机器可读）：<code>form</code>（web/cli/service/library/pipeline）、能力标志（<code>backend</code>/<code>frontend</code>/<code>ui</code>/<code>persistence</code>/<code>llm</code>/<code>migration</code>/<code>observability</code>/<code>heavy_framework</code>/<code>docs_needed</code>）、<code>cloud</code>、<code>complexity</code>、<code>confirmed</code>。registry 每个条件维度有机器可读 <code>activate_if:</code>（如 <code>api_design.activate_if: [backend]</code>、<code>gcp_runtime.activate_if: [cloud=gcp]</code>）；<code>activate-dimensions.sh</code> 据此<strong>确定性</strong>激活，杜绝 vibe 误挂 / 漏挂。</p>
 
-        <h3 id="gates-disclosure">渐进披露 L1 → L2 → L3</h3>
+        <h3 id="gates-disclosure">阶段树 P0–P2 · 维度披露 D1–D3</h3>
         <ul>
-          <li><strong>L1 = <code>summary</code></strong>（registry 内一行 what+when）：命中维度先只注入摘要（便宜）。</li>
-          <li><strong>L2 = <code>path</code> 全文 SKILL.md</strong>：仅当本阶段确需该维度细则时才 <code>Read</code>（贵）。</li>
-          <li><strong>L3 = skill 内 <code>references/</code></strong>：L2 仍不够时再下钻。</li>
+          <li><strong>P0</strong>（<code>phase-discipline.mdc</code> + <code>phase-brief.sh</code>）：只带必答<strong>提问</strong>，不带规则正文。</li>
+          <li><strong>P1</strong>：对应 <code>speckit-*</code> SKILL.md（full ceremony 时等用户「继续」再 Read）。</li>
+          <li><strong>P2</strong>：gate 脚本 + <code>phase.yml</code> 状态；<code>--unlock-status</code> 实时跑 gate。</li>
+          <li><strong>D1 = <code>summary</code></strong>（P2 通过后 <code>activate-dimensions.sh</code>）：命中维度先只注入摘要。</li>
+          <li><strong>D2 = SKILL.md 全文</strong>：本步确需细则时才 <code>Read</code>。</li>
+          <li><strong>D3 = <code>references/</code></strong>：D2 仍不够时再下钻。</li>
         </ul>
-        <p>多维度同阶段默认只摘要、按需展开，压住「全文一次性灌入」造成的指令稀释。</p>
+        <p>（历史文档中的 L1/L2/L3 指同一套维度披露层，现统一称 D1/D2/D3，避免与 P 层混淆。）</p>
 
         <h3 id="gates-verify">verify 通用化：按 form 选 DoD 档位</h3>
         <p>「完成」的 DoD <strong>按产物形态选档</strong>（见 <code>.specify/memory/verify-profiles.md</code>）。<code>chrome-devtools(-cli)</code> 仅 <strong>web 档</strong>必需；其余形态用各自命令验证：</p>

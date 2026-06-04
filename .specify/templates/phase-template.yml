@@ -1,0 +1,9 @@
+# phase.yml — 特性阶段状态（单一真相源之一，与 run-log 互补）
+current_phase: specify
+feature_directory: ""
+phase_updated_at: ""
+last_gate_passed: null
+last_phase_completed_at: null
+ceremony_last_at: null
+mode: normal
+notes: ""
