@@ -78,6 +78,18 @@ Execution steps:
 
 3. Load the current spec file. Perform a structured ambiguity & coverage scan using this taxonomy. For each category, mark status: Clear / Partial / Missing. Produce an internal coverage map used for prioritization (do not output raw map unless no questions will be asked).
 
+   **五维优先级（clarify 提问队列 · 映射到下方 taxonomy）**：
+
+   | 优先级 | 维 | 行为 |
+   |--------|-----|------|
+   | P1 | ④ 候选 | `[NEEDS CLARIFICATION]` / 假设列表 → 逐条 in-out-优先级 |
+   | P2 | ③ 基线 | 验收/边界 Partial → 补问，不重复贴功能表 |
+   | P3 | ② As-Is | Current State 空且影响范围裁定 → 补问 |
+   | P4 | ① | 仅当涉及成功标准 |
+   | — | ⑤ | **不问**（留给技术栈闸门 / plan） |
+
+   生成问题队列时 **先 P1 再 P2/P3**；每条问题在聊天中用维标签展示（见下方 Q&A 格式）。
+
    Functional Scope & Behavior:
    - Core user goals & success criteria
    - Explicit out-of-scope declarations
@@ -145,6 +157,7 @@ Execution steps:
 
 5. Sequential questioning loop (interactive):
     - Present EXACTLY ONE question at a time.
+    - **五维 Q&A 展示（硬约束）**：每条问题须带维标签，例如 `**【④ 候选功能】问：** …`；用户答后 `**【④ …】答：** …`（与 specify Ping 格式一致）。
     - For multiple‑choice questions:
        - **Analyze and SCORE every option** by recommendation strength, based on:
           - Best practices for the project type
@@ -198,7 +211,8 @@ Execution steps:
     - For the first integrated answer in this session:
        - Ensure a `## Clarifications` section exists (create it just after the highest-level contextual/overview section per the spec template if missing).
        - Under it, create (if not present) a `### Session YYYY-MM-DD` subheading for today.
-    - Append a bullet line immediately after acceptance: `- Q: <question> → A: <final answer>`.
+    - Append a bullet line immediately after acceptance: `- Q: [<②|③|④>] <question> → A: <final answer>`.
+    - **双写 Input Q&A**：同一条 Q→A 追加到 `## Input Q&A (②③④⑤)` 对应 `###` 小节（格式 `- **Q:** … **A:** … _(clarify, YYYY-MM-DD)_`）。
     - Then immediately apply the clarification to the most appropriate section(s):
        - Functional ambiguity → Update or add a bullet in Functional Requirements.
        - User interaction / actor distinction → Update User Stories or Actors subsection (if present) with clarified role, constraint, or scenario.
@@ -216,7 +230,7 @@ Execution steps:
    - Total asked (accepted) questions ≤ 5.
    - Updated sections contain no lingering vague placeholders the new answer was meant to resolve.
    - No contradictory earlier statement remains (scan for now-invalid alternative choices removed).
-   - Markdown structure valid; only allowed new headings: `## Clarifications`, `### Session YYYY-MM-DD`.
+    - Markdown structure valid; allowed new headings include `## Clarifications`, `### Session YYYY-MM-DD`, `## Input Q&A (②③④⑤)` subsections.
    - Terminology consistency: same canonical term used across all updated sections.
 
 8. Write the updated spec back to `FEATURE_SPEC`.

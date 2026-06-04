@@ -64,7 +64,9 @@ You **MUST** consider the user input before proceeding (if not empty).
 **进入正文前必须先过门，非零退出即停，先于任何主观判断：**
 
 1. **clarify 门**：运行 `.specify/scripts/bash/gate-clarify.sh`。非零 → 停，回 `/speckit-clarify` 消除残留 `[NEEDS CLARIFICATION]`/TODO 后重跑。
-2. **技术栈闸门**：与用户确认技术栈/架构方向（见 constitution「技术栈与运行方式闸门」），把结论写入 `FEATURE_DIR/stack.yml`（可从 `.specify/templates/stack-template.yml` 起手），填 `form` / 能力标志 / `complexity`，并设 `confirmed: true`。
+2. **技术栈闸门**：与用户确认技术栈/架构方向（见 constitution「技术栈与运行方式闸门」及 `.specify/memory/orchestration/stack-gate.md`）。
+   - 每条 **⑤ / ②-迁移** 问题：**【⑤】/【②-迁移】问/答** 展示 → 落盘 `spec.md` `Input Q&A` → 再写 `stack.yml`（`confirmed: true`）。
+   - 可从 `.specify/templates/stack-template.yml` 起手，填 `form` / 能力标志 / `complexity`。
 3. **stack 门**：运行 `.specify/scripts/bash/gate-stack.sh`。非零 → 停，补齐 `stack.yml`。
 4. **激活条件维度**：运行 `.specify/scripts/bash/activate-dimensions.sh --phase plan`，按输出挂载条件维度（先 L1 summary，按需 L2，见编排规则「渐进披露协议」）。
 

@@ -10,5 +10,7 @@
 
 brainstorming 与 speckit-specify 对齐（见 phase-index `brainstorming_modes`）：
 - trivial + 背景充分 → `none`（勿误报 brainstorming 为已用 skill）
-- 背景不足 → `partial_background`（一次一问）
+- 背景不足 → `partial_background`（一次一问，仅 abc/①）
 - standard/complex → `partial_approaches` 或 `full`
+
+**trivial · Post-Draft Coverage Ping**：② 无 legacy 迹象 → 一行 waived Q→A，不追问 As-Is；④⑤ 不在 specify 问。仍须 `Input Q&A` 非空（waived 行即可）。

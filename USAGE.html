@@ -172,7 +172,7 @@
         <li><a href="#start">0.1 如何启动</a></li>
         <li><a href="#pipeline">1. 一条龙</a></li>
         <li><a href="#howto">2. 每步怎么跑</a></li>
-        <li><a href="#input-when" class="sub"><strong>2.1 需求输入五维度</strong></a></li>
+        <li><a href="#input-staged" class="sub">2.1.1 分阶段唤醒 + Q&A 落盘</a></li>
         <li><a href="#complexity">3. 复杂度分级</a></li>
         <li><a href="#gates">4. 门速查</a></li>
         <li><a href="#reentry">5. 维护再入</a></li>
@@ -367,7 +367,19 @@
           <li>(b) 目标 / 可验收的成功标准</li>
           <li>(c) 关键约束</li>
         </ul>
-        <p>三项齐备（或你明确说「就这些，按你理解起草」）→ 直接出 spec；任一缺失 → AI 一次一问，<strong>不动笔写 spec</strong>。</p>
+        <p>三项齐备（或你明确说「就这些，按你理解起草」）→ 直接出 spec；任一缺失 → AI 一次一问，<strong>不动笔写 spec</strong>。<strong>首条不问卷 ②③④⑤</strong>（见下「分阶段唤醒」）。</p>
+
+        <h3 id="input-staged">分阶段唤醒 + ②③④⑤ Q&A 落盘</h3>
+        <p>先出 <strong>spec v0</strong>，再在边界处按需补问；每次只问一维；<strong>对话与 spec 均显式展示问与答</strong>。</p>
+        <table>
+          <thead><tr><th>检查点</th><th>补问维度</th><th>对话格式</th><th>落盘</th></tr></thead>
+          <tbody>
+            <tr><td><strong>specify 尾声 Ping</strong></td><td>② ③（缺口时）</td><td><code>【② 现状 As-Is】问/答</code></td><td><code>spec.md</code> → <code>## Input Q&A</code> + Current State / Stories</td></tr>
+            <tr><td><strong>clarify</strong></td><td>④ 主；②③ 按需</td><td><code>【④ 候选功能】问/答</code></td><td><code>Clarifications</code> + <code>Input Q&A</code> 双写</td></tr>
+            <tr><td><strong>技术栈闸门</strong></td><td>⑤；② 迁移</td><td><code>【⑤ 环境与依赖】</code> / <code>【②-迁移】</code></td><td><code>Input Q&A</code> → 再写 <code>stack.yml</code></td></tr>
+          </tbody>
+        </table>
+        <p>跳过/暂无 → 仍记一条 Q→A（<code>A: waived</code>）。复盘时只读 <code>Input Q&A</code> 即可串起 ②③④⑤ 问答链。详见 <code>speckit-specify</code> Post-Draft Coverage Ping。</p>
 
         <h3>五类输入物定义（归类用）</h3>
         <table>
