@@ -340,6 +340,8 @@
         <li><a href="#principles">2. 设计原则</a></li>
         <li><a href="#architecture">3. 整体架构</a></li>
         <li><a href="#pipeline">4. 阶段流水线</a></li>
+        <li><a href="#meta-modes" class="sub">4.1 Meta 编排</a></li>
+        <li><a href="#pulse-schedule" class="sub">4.2 定时 pulse</a></li>
         <li><a href="#gates" class="sub">4.5 可执行门/机器激活/披露</a></li>
         <li><a href="#registry">5. Skill 注册表</a></li>
         <li><a href="#registry-why" class="sub">5.1 为何本地精选</a></li>
@@ -444,7 +446,8 @@ flowchart TB
 
       <section id="pipeline">
         <h2>4. 编排层：阶段流水线</h2>
-        <p>沿用 Spec Kit 的标准阶段，每个阶段声明两件事：<strong>挂载哪些维度的 skill</strong>、<strong>默认算力档位</strong>。</p>
+        <p>P1 阶段顺序以 <code>.specify/workflows/workflow-index.yml</code> 为准。每阶段声明：<strong>挂载哪些维度的 skill</strong>、<strong>默认算力档位</strong>（<code>model_tier: strong|fast</code>）、<strong>阶段间门</strong>（P2）。</p>
+        <p class="callout callout-info">一次性全局约束：<code>/speckit-constitution</code> 确立原则与红线，<strong>不</strong>计入特性流水线序号。</p>
         <table>
           <thead>
             <tr>
@@ -452,84 +455,144 @@ flowchart TB
               <th>命令</th>
               <th>职责</th>
               <th>默认模型</th>
-              <th>质量门</th>
+              <th>质量门（P2）</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>宪法</td>
-              <td><code>/speckit.constitution</code></td>
-              <td>一次性确立全局原则、模型路由规则、质量红线</td>
+              <td>立项</td>
+              <td><code>/speckit-charter</code></td>
+              <td>abc 背景判断、业务逻辑、方向/范围确认 → <code>charter.md</code> / <code>charter.yml</code></td>
               <td><span class="badge badge-opus">Opus</span></td>
-              <td>—</td>
+              <td><code>gate-charter.sh</code></td>
             </tr>
             <tr>
               <td>规范</td>
-              <td><code>/speckit.specify</code></td>
-              <td>把需求结构化为 <code>spec.md</code>，标出所有 <code>[NEEDS CLARIFICATION]</code></td>
+              <td><code>/speckit-specify</code></td>
+              <td>环境隔离（<code>global-prefs.yml</code>）→ 从 charter 扩写 <code>spec.md</code>；Post-Draft Ping</td>
               <td><span class="badge badge-opus">Opus</span></td>
-              <td>—</td>
+              <td><code>gate-global-prefs.sh</code> + <code>gate-spec-coverage.sh</code></td>
             </tr>
             <tr>
               <td>澄清</td>
-              <td><code>/speckit.clarify</code></td>
-              <td>逐条提问，消除模糊点</td>
+              <td><code>/speckit-clarify</code></td>
+              <td>逐条提问，消除模糊点（trivial 可跳过提问仍扫门）</td>
               <td><span class="badge badge-opus">Opus</span></td>
-              <td><strong>进 plan 前 spec 必须零模糊点</strong></td>
+              <td><code>gate-clarify.sh</code></td>
+            </tr>
+            <tr>
+              <td>技术栈闸门</td>
+              <td>对话 → <code>stack.yml</code></td>
+              <td>用户拍板 To-Be 形态/栈；AI 只推荐须你点头</td>
+              <td><span class="badge badge-opus">Opus</span></td>
+              <td><code>gate-stack.sh</code>（进 plan/tasks/implement 前）</td>
             </tr>
             <tr>
               <td>计划</td>
-              <td><code>/speckit.plan</code></td>
-              <td>技术栈、架构、数据模型、接口、测试策略</td>
+              <td><code>/speckit-plan</code></td>
+              <td>架构/数据模型/接口/测试策略；正文后 <strong>grill-with-docs</strong></td>
               <td><span class="badge badge-opus">Opus</span></td>
-              <td><strong>进 plan 前必须先确认技术栈/架构方向</strong></td>
+              <td><code>gate-clarify.sh</code> + <code>gate-stack.sh</code> + <code>gate-grill.sh</code></td>
             </tr>
             <tr>
               <td>分析</td>
-              <td><code>/speckit.analyze</code></td>
-              <td>交叉检查 spec / plan / tasks 一致性</td>
+              <td><code>/speckit-analyze</code></td>
+              <td>交叉检查 spec / plan / tasks 一致性；激活条件维度</td>
               <td><span class="badge badge-opus">Opus</span></td>
-              <td><strong>不一致 / 运行方式不可行 不放行</strong></td>
+              <td><code>gate-analyze.sh</code></td>
             </tr>
             <tr>
               <td>拆解</td>
-              <td><code>/speckit.tasks</code></td>
+              <td><code>/speckit-tasks</code></td>
               <td>拆成有序、可并行 <code>[P]</code> 的原子任务</td>
               <td><span class="badge badge-opus">Opus</span></td>
-              <td>—</td>
+              <td><code>gate-stack.sh</code></td>
             </tr>
             <tr>
               <td>实现</td>
-              <td><code>/speckit.implement</code></td>
+              <td><code>/speckit-implement</code></td>
               <td>按依赖顺序执行，写代码 + 测试</td>
               <td><span class="badge badge-comp">Composer</span>（卡住升 Opus）</td>
-              <td>—</td>
+              <td><code>gate-analyze.sh</code></td>
             </tr>
             <tr>
               <td>验证</td>
-              <td><code>verify</code>（本工作流自有）</td>
+              <td><code>speckit-verify</code></td>
               <td>真运行 + 抓 console + 跑验收场景 + 截图取证，不收自我汇报</td>
               <td><span class="badge badge-opus">Opus</span></td>
-              <td><strong>可执行 DoD 全过才算完成</strong></td>
+              <td><code>gate-verify.sh</code></td>
             </tr>
             <tr>
               <td>交付</td>
-              <td><code>deliver</code>（本工作流自有 · 跟 MR 自动）</td>
+              <td>deliver（<code>release.enabled:true</code>）</td>
               <td>per-feature：PR → CI 绿 → 合并 main → staging+smoke(T1+)。verify 后可自动跟</td>
               <td><span class="badge badge-comp">Composer</span></td>
-              <td><strong>gate-deliver 全过 + deliver.md 留证</strong></td>
+              <td><code>gate-deliver.sh</code> + verify PASS</td>
             </tr>
             <tr>
               <td>上线</td>
-              <td><code>release</code>（本工作流自有 · <strong>仅用户触发</strong>）</td>
+              <td>release（<strong>仅用户触发</strong>）</td>
               <td>聚合多个已交付 feature 渐进发布到生产 + 回滚 + 取证；按 tier(T0–T3) 选 DoD。<strong>仓库级 <code>.releases/&lt;version&gt;/</code></strong></td>
               <td><span class="badge badge-comp">Composer</span>（裁决升 Opus）</td>
-              <td><strong>gate-release 全过 + release.md 留证</strong></td>
+              <td><code>gate-release.sh</code></td>
             </tr>
           </tbody>
         </table>
-        <p class="callout callout-info">原则：<strong>前期（理解与设计）全程 Opus，后期（执行）默认 Composer</strong>。详见第 7 节。</p>
+        <p class="callout callout-info">原则：<strong>前期（理解与设计）全程 Opus，后期（执行）默认 Composer</strong>。详见第 7 节。操作细节见 <a href="USAGE.html#pipeline">USAGE §1 一条龙</a>。</p>
         <p class="callout">技术栈闸门的结论<strong>同时决定激活哪些条件领域维度</strong>（后端→<code>api_design</code>、前端→<code>frontend_ui</code>、需持久化→<code>data_modeling</code>、GCP→<code>gcp_runtime</code> 等，见 5.4）。</p>
+
+        <h3 id="meta-modes">4.1 Meta 编排（modes，非 P1 阶段）</h3>
+        <p>在 <code>workflow-index.yml</code> 的 <code>modes:</code> 登记，<strong>不</strong>写入 <code>phases:</code> 主链。详见 <code>.specify/memory/orchestration/iteration-handoff.md</code> 与 <code>iteration-drive.md</code>。</p>
+        <table>
+          <thead>
+            <tr><th>mode</th><th>触发</th><th>用途</th><th>关键产物 / 门</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>amend</td>
+              <td>已交付小改</td>
+              <td>跳过 charter/specify；改 spec → 局部 clarify/plan → implement</td>
+              <td><code>phase-brief --mode amend</code> → 必 <code>gate-verify.sh</code></td>
+            </tr>
+            <tr>
+              <td>handoff</td>
+              <td><code>/handoff</code> 或跨会话</td>
+              <td>读 <code>phase.yml</code> + <code>--unlock-status</code> 续跑</td>
+              <td>路径指针；<strong>不能</strong>代替 verify 证据</td>
+            </tr>
+            <tr>
+              <td>drive</td>
+              <td><code>/speckit-drive</code></td>
+              <td><strong>greenfield</strong>：闸门间自动 invoke 各 <code>/speckit-*</code>；<strong>maintain</strong>：pulse → queue → amend</td>
+              <td><code>drive.yml</code>（<code>consent: true</code>）+ <code>gate-drive.sh</code>；定时 pulse 见 §4.2</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+flowchart TB
+  subgraph gf [greenfield]
+    Loop[phase.yml plus unlock] --> Next[speckit phase]
+    Loop --> Pause[pause_at human gates]
+  end
+  subgraph mt [maintain]
+    Cron[Automation] --> Check[check-pulse-schedule]
+    Check --> Pulse[one question]
+    Pulse --> Queue[iteration-queue]
+    Queue --> Amend[amend path]
+  end
+  gf -->|after verify| mt
+          </pre>
+        </div>
+
+        <h3 id="pulse-schedule">4.2 定时 pulse（仓库级 · meta）</h3>
+        <p>交付后按仓库配置周期性采集体验/需求（<strong>只采集</strong>，一期不自动 amend/implement/release）。配置：<code>.specify/pulse-schedule.yml</code>（由 <code>templates/pulse-schedule-template.yml</code> 复制）。</p>
+        <ol>
+          <li><code>render-pulse-cron.sh --list</code> → 每轮一条 Cursor Automation cron</li>
+          <li>触发：<code>check-pulse-schedule.sh --json</code> → 一次一问 → 用户回复 → <code>record-pulse-run.sh</code></li>
+          <li>Setup：<code>/speckit-drive --setup-automation</code>（Instructions 用 <code>automation-maintain-pulse.prompt.md</code>）</li>
+        </ol>
+        <p>操作步骤见 <a href="USAGE.html#drive">USAGE §1.1</a>。</p>
       </section>
 
       <section id="gates">
@@ -546,13 +609,18 @@ flowchart TB
             <tr><td>specify 结束</td><td><code>gate-spec-coverage.sh</code></td><td><code>spec-coverage.yml</code> + Input Q&A + Assumptions；delegate global-prefs</td></tr>
             <tr><td>进 plan 前</td><td><code>gate-clarify.sh</code></td><td>spec 无残留模糊点 + delegate global-prefs + 覆盖度门</td></tr>
             <tr><td>plan/tasks/implement 前</td><td><code>gate-stack.sh</code></td><td><code>stack.yml</code> 存在、<code>confirmed: true</code>、有 <code>form</code></td></tr>
+            <tr><td>plan 结束</td><td><code>gate-grill.sh</code></td><td><code>grill.yml</code> confirmed 或 trivial waived；<code>grill-log.md</code> 无 OPEN</td></tr>
             <tr><td>plan 后 / analyze</td><td><code>activate-dimensions.sh</code></td><td>读 <code>stack.yml</code>+registry，<strong>确定性</strong>输出该激活的条件维度</td></tr>
-            <tr><td>analyze</td><td><code>gate-analyze.sh</code></td><td>聚合：无模糊点 / 栈已确认 / 用户故事在 tasks 有落点 / 激活维度路径可解析</td></tr>
+            <tr><td>analyze</td><td><code>gate-analyze.sh</code></td><td>聚合：无模糊点 / 栈已确认 / delegate grill / 用户故事在 tasks 有落点 / 激活维度路径可解析</td></tr>
             <tr><td>implement 后</td><td><code>gate-verify.sh</code></td><td>跑 <code>verify.yml</code> 命令看退出码 + 扫残留 + 按 <code>form</code> 选 DoD 档</td></tr>
             <tr><td>verify 后（<code>release.enabled</code>，跟 MR）</td><td><code>gate-deliver.sh</code></td><td>per-feature：前置 verify + 跑 <code>deliver.yml</code> + 核验 PR/CI/制品 SHA（T1+ 加 staging）</td></tr>
             <tr><td>用户触发上线时</td><td><code>gate-release.sh [.releases/&lt;version&gt;]</code></td><td>仓库级：includes 都已 deliver + 跑 <code>release.yml</code> + 核验回滚/SHA + 按 <code>tier</code> canary 证据</td></tr>
+            <tr><td>drive 会话（meta）</td><td><code>gate-drive.sh</code></td><td><code>drive.yml</code> 存在、<code>consent: true</code>、<code>tier</code> 合法、步数/迭代未用尽；<strong>不</strong>挂在 specify/plan 主链</td></tr>
+            <tr><td>定时 pulse（meta）</td><td><code>check-pulse-schedule.sh</code></td><td>仓库级：enabled / 项目与日窗口 / quota / <code>round_times</code>；通过后仅一轮一问</td></tr>
+            <tr><td>pulse 成功后（meta）</td><td><code>record-pulse-run.sh</code></td><td>递增本周期 <code>runs_completed</code>；跨周期重置 <code>period_id</code></td></tr>
           </tbody>
         </table>
+        <p class="callout"><code>gate-drive.sh</code> / <code>check-pulse-schedule.sh</code> 仅供 <code>/speckit-drive</code> 与 Cursor Automation；不得替代 <code>gate-verify.sh</code> 验收。</p>
 
         <h3 id="gates-stack">机器可读 stack.yml 驱动条件维度</h3>
         <p>技术栈闸门把用户确认的方向写入 <code>FEATURE_DIR/stack.yml</code>（机器可读）：<code>form</code>（web/cli/service/library/pipeline）、能力标志（<code>backend</code>/<code>frontend</code>/<code>ui</code>/<code>persistence</code>/<code>llm</code>/<code>migration</code>/<code>observability</code>/<code>heavy_framework</code>/<code>docs_needed</code>）、<code>cloud</code>、<code>complexity</code>、<code>confirmed</code>。registry 每个条件维度有机器可读 <code>activate_if:</code>（如 <code>api_design.activate_if: [backend]</code>、<code>gcp_runtime.activate_if: [cloud=gcp]</code>）；<code>activate-dimensions.sh</code> 据此<strong>确定性</strong>激活，杜绝 vibe 误挂 / 漏挂。</p>
@@ -586,21 +654,24 @@ flowchart TB
 
         <pre class="mermaid">
 flowchart TB
+  CHARTER["charter + gate-charter"]
   TRIAGE{"triage 复杂度"}
-  TRIAGE -->|"trivial"| FAST["快速通道\nspecify(min) → implement → verify(轻)"]
+  CHARTER --> TRIAGE
+  TRIAGE -->|"trivial"| FAST["快速通道\ncharter → specify(min) → implement → verify(轻)"]
   TRIAGE -->|"standard/complex"| SPEC["specify"]
   SPEC --> CLAR["clarify"]
   CLAR --> GATE1["gate-clarify.sh"]
-  GATE1 --> STACKGATE["技术栈闸门 → 写 stack.yml(confirmed)"]
+  GATE1 --> STACKGATE["技术栈闸门 → stack.yml(confirmed)"]
   STACKGATE --> GATE2["gate-stack.sh"]
-  GATE2 --> PLAN["plan"]
-  PLAN --> ACT["activate-dimensions.sh"]
+  GATE2 --> PLAN["plan + grill-with-docs"]
+  PLAN --> GRILL["gate-grill.sh"]
+  GRILL --> ACT["activate-dimensions.sh"]
   ACT --> ANALYZE["analyze + gate-analyze.sh"]
   ANALYZE --> TASKS["tasks"]
   TASKS --> IMPL["implement"]
-  IMPL --> GATE3["gate-verify.sh\n退出码 + 选 DoD 档"]
+  IMPL --> GATE3["gate-verify.sh"]
   GATE3 -->|"fail"| IMPL
-  GATE3 -->|"pass"| DONE["完成(留证据 verify.md)"]
+  GATE3 -->|"pass"| DONE["verify.md 留证"]
   FAST --> GATE3
         </pre>
       </section>
@@ -624,7 +695,7 @@ dimensions:
     skill: brainstorming
     source: local
     reviewed: 2026-06-02
-    bind_phase: [specify, clarify]
+    bind_phase: [charter, specify, clarify]
 
   product_taste:                # 取舍 / 品味 / 砍需求
     skill: first-principles
@@ -681,7 +752,7 @@ flowchart TB
         R["brainstorming / first-principles / tdd / to-prd / diagnose / chrome-devtools-cli"]
     end
     subgraph L2 [L2 通用增强 · 全项目]
-        G["security / performance / code_review / adversarial_review / parallel_execution / handoff(meta)"]
+        G["security / performance / code_review / adversarial_review / parallel_execution / handoff(meta) / drive(meta)"]
     end
     subgraph L2D [L2 专业领域 · 条件维度,when 命中才挂]
         D["ux_design / api_design / frontend_ui / source_grounding / data_modeling / documentation_adr / data_migration / ai_integration / observability / gcp_runtime"]
@@ -706,6 +777,8 @@ flowchart TB
             <tr><td>adversarial_review</td><td>doubt-driven-development</td><td>Addy</td><td>analyze, implement</td></tr>
             <tr><td>parallel_execution</td><td>subagent-driven-development (+ worktrees)</td><td>Superpowers</td><td>implement</td></tr>
             <tr><td>session_handoff</td><td>handoff</td><td>Matt</td><td>meta（/handoff 触发）</td></tr>
+            <tr><td>grill_with_docs</td><td>grill-with-docs</td><td>local</td><td>plan（grill-with-docs 子步骤）</td></tr>
+            <tr><td>product_pulse</td><td>speckit-pulse → speckit-drive</td><td>authored</td><td>meta（maintain / Automation pulse）</td></tr>
             <tr><td>ux_design</td><td>visual-brainstorming</td><td>Superpowers</td><td>specify/clarify · <code>when</code> 有 UI</td></tr>
             <tr><td>api_design</td><td>api-and-interface-design</td><td>Addy</td><td>plan/tasks/implement · <code>when</code> 后端</td></tr>
             <tr><td>frontend_ui</td><td>frontend-ui-engineering</td><td>Addy</td><td>plan/tasks/implement · <code>when</code> 前端</td></tr>
@@ -889,20 +962,32 @@ flowchart TB
 ├── USAGE.html                     # 使用手册（速查卡 + 需求输入五维度含 As-Is 现状 + 门/红线）
 ├── .specify/                      # Spec Kit 工作区
 │   ├── memory/
-│   │   ├── constitution.md        # 全局原则 + 模型路由 + 质量红线 + 维护再入（v1.12.0）
+│   │   ├── constitution.md        # 全局原则 + 模型路由 + 质量红线 + Drive（v1.13.0）
+│   │   ├── orchestration/         # 编排章节（gates / iteration-drive / handoff …）
 │   │   ├── verify-profiles.md     # 按 form 的 DoD 档位（web/desktop/cli/service/library/pipeline）
 │   │   ├── verify-sync.md         # spec/tasks → verify 覆盖对齐协议
 │   │   └── release-profiles.md    # 发布范式（7 原则 / 6 阶段 / T0–T3 / 回滚矩阵）
+│   ├── workflows/
+│   │   ├── workflow-index.yml     # P1 phases + modes（drive/amend/handoff）
+│   │   └── phase-index.yml        # P0 自检提问
+│   ├── pulse-schedule.yml         # 仓库级定时 pulse（从 template 复制，可选）
 │   ├── scripts/bash/              # 可执行门（退出码即真相）
+│   │   ├── phase-brief.sh         #   P0 提问 + --unlock-status / --mode drive
+│   │   ├── validate-workflow-index.sh
 │   │   ├── gate-charter.sh        #   charter 结束：章程确认 + complexity
 │   │   ├── gate-global-prefs.sh   #   specify：环境隔离 global-prefs.yml
 │   │   ├── gate-spec-coverage.sh  #   specify 结束：Post-Draft Ping 覆盖度
+│   │   ├── gate-grill.sh          #   plan 结束：grill-with-docs 结案
 │   │   ├── gate-clarify.sh        #   进 plan 前：占位符 + global-prefs + 覆盖度
 │   │   ├── gate-stack.sh          #   stack.yml 存在/confirmed/form/global_prefs
 │   │   ├── gate-analyze.sh        #   聚合一致性 / 覆盖 / 维度路径
 │   │   ├── gate-verify.sh         #   跑 verify.yml + 扫残留 + 选 DoD 档 + GUI closure
 │   │   ├── gate-deliver.sh        #   per-feature：PR/CI/制品 SHA（T1+ staging）
 │   │   ├── gate-release.sh        #   仓库级：includes 都已 deliver + 回滚/SHA/canary
+│   │   ├── gate-drive.sh          #   meta：drive.yml consent/tier
+│   │   ├── check-pulse-schedule.sh #  meta：定时 pulse 窗口/quota
+│   │   ├── record-pulse-run.sh    #   meta：pulse 周期计数
+│   │   ├── render-pulse-cron.sh   #   meta：从 pulse-schedule 生成 cron
 │   │   ├── gate-skill-freshness.sh #  registry reviewed 过期 + 路径失效扫描
 │   │   ├── activate-dimensions.sh #   读 stack.yml 确定性激活条件维度
 │   │   ├── sync-verify.sh         #   spec/tasks 自动生成/合并 verify 覆盖
@@ -911,23 +996,25 @@ flowchart TB
 │   ├── tests/                     # 门脚本回归测试（合成 fixture 跑 PASS/BLOCK 双路径）
 │   │   └── run-gate-tests.sh
 │   ├── templates/                 # 机器可读产物模板
-│   │   ├── stack-template.yml      #   技术栈闸门产物
-│   │   ├── verify-template.md       #   验收证据表（禁「待 GUI」占位）
-│   │   ├── deliver-template.yml      #   deliver 环节
-│   │   └── release-template.yml      #   release 环节
-│   └── specs/                     # 各特性产物（含 stack.yml / verify.yml / verify.md / deliver.md）
+│   │   ├── charter-template.md / charter-template.yml
+│   │   ├── drive-template.yml / pulse-schedule-template.yml
+│   │   ├── stack-template.yml / verify-template.md
+│   │   ├── deliver-template.yml / release-template.yml
+│   │   └── automation-maintain-pulse.prompt.md
+│   └── specs/                     # 各特性产物（含 drive.yml / stack.yml / verify.md …）
 └── .cursor/
     ├── skills/                    # 本地精选 + 增强层固化 skill
-    │   ├── speckit-*/             #   编排命令 skill（含 speckit-verify / speckit-release）
+    │   ├── speckit-charter/ speckit-drive/ speckit-verify/ …
+    │   ├── grill-with-docs/       #   grill_with_docs 维度
     │   ├── security-and-hardening/ … #  增强层（Addy/Superpowers 提级）
     │   ├── visual-brainstorming/  #   ux_design（Superpowers visual companion）
     │   ├── data-modeling/         #   自编（authored）
     │   ├── workflow-retro/        #   自反馈闭环（meta · /retro 触发）
     │   └── handoff/               #   跨会话传话（Matt）
-    ├── registry.yaml              # 维度 → skill 映射（7 基础 + 7 通用增强含 retro + 12 条件/交付领域）
+    ├── registry.yaml              # 维度 → skill 映射
     ├── quarantine/                # 联网候选隔离区（SOURCES.md / REVIEW.md + 来源子目录）
     └── rules/
-        ├── workflow-orchestration.mdc  # 阶段编排 + 增强层（非替换）+ deliver/release
+        ├── workflow-orchestration.mdc  # 阶段编排 + 增强层（非替换）+ deliver/release + drive
         └── specify-rules.mdc      # Spec Kit 生成的上下文指引</code></pre>
       </section>
 
@@ -941,7 +1028,7 @@ flowchart TB
           <li><strong>写宪法</strong>：在 <code>constitution</code> 中固化「模型路由规则 + 质量红线 + 维度激活规则 + verify/deliver/release 范式 + 环境隔离闸门」。</li>
           <li><strong>装可执行门</strong>：放入 <code>.specify/scripts/bash/gate-*.sh</code>（退出码即真相），并用 <code>.specify/tests/run-gate-tests.sh</code> 跑门脚本回归（PASS/BLOCK 双路径）。</li>
           <li><strong>接缺口处理</strong>：在各阶段命令中加入「查表 → 用户闸门 →（不需要才）三层降级 /（需要则）补全路径」，并建好 <code>quarantine/</code>。</li>
-          <li><strong>试跑</strong>：用一个真实需求跑完整条流水线（specify→…→verify，必要时 deliver/release），验证缺口降级、门拦截与模型路由是否按预期工作。</li>
+          <li><strong>试跑</strong>：用一个真实需求跑完整条流水线（charter→…→verify，必要时 deliver/release），验证缺口降级、门拦截与模型路由是否按预期工作。</li>
         </ol>
       </section>
 
@@ -956,7 +1043,7 @@ flowchart TB
             <tr><td>构建不可复现</td><td>联网产物必须固化进注册表后才正式使用</td></tr>
             <tr><td>注册表初期覆盖不足</td><td>用户闸门确认方向 + 第 1/2 层兜底 + 按需补全（收敛）</td></tr>
             <tr><td>Composer 在难任务上失败</td><td>失败即升级回 Opus</td></tr>
-            <tr><td>流程比「一句话直出」慢</td><td>简单需求走快速通道（specify→tasks→implement）</td></tr>
+            <tr><td>流程比「一句话直出」慢</td><td>简单需求走快速通道（见 §4 trivial：charter → specify(min) → implement → verify 轻量档）</td></tr>
           </tbody>
         </table>
       </section>
@@ -969,7 +1056,7 @@ flowchart TB
       </section>
 
       <footer class="doc-footer">
-        workflow · Spec-Driven 产品工作流架构 · constitution v1.9.0 · 2026-06-03
+        workflow · Spec-Driven 产品工作流架构 · constitution v1.13.0 · 2026-06-05
       </footer>
     </main>
   </div>

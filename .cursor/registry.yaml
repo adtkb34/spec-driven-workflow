@@ -111,6 +111,16 @@ dimensions:
     reviewed: 2026-06-02
     bind_phase:
     - implement
+  grill_with_docs:
+    desc: 文档级对抗审查（spec/plan/CONTEXT/ADR）
+    summary: 文档拷问：plan 后 grill spec·plan·ADR 一致性；analyze 可复检；与 clarify 协作式澄清分工。
+    skill: grill-with-docs
+    path: ".cursor/skills/grill-with-docs/SKILL.md"
+    source: local
+    reviewed: 2026-06-04
+    bind_phase:
+    - plan
+    - analyze
   adversarial_review:
     desc: 对抗式复核（CLAIM→DOUBT→RECONCILE），高 stakes 决策当场质疑
     summary: 对抗式复核：analyze·implement 期对高 stakes 决策 CLAIM→DOUBT→RECONCILE。
@@ -295,6 +305,14 @@ dimensions:
     - plan
     - tasks
     - implement
+  product_pulse:
+    desc: 交付后体验与需求脉冲采集（maintain / scheduled Automation）
+    summary: 交付后 pulse：一次一问采集体验/新需求/优先级/回归；由 speckit-drive 或 speckit-pulse 激活。
+    skill: speckit-pulse
+    path: ".cursor/skills/speckit-pulse/SKILL.md"
+    source: local
+    reviewed: 2026-06-04
+    bind_phase: []
   delivery:
     desc: 交付环节（跟 MR 自动）：PR+CI+合并 main+到 staging；per-feature，verify 后可自动跟
     summary: 交付：deliver 阶段(跟 MR)开 PR/等 CI 绿/合并 main/到 staging，per-feature，verify 后自动跟。

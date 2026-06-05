@@ -29,6 +29,7 @@ alwaysApply: true
 | Run Log | `.specify/memory/orchestration/run-log.md` |
 | verify / deliver / release | `.specify/memory/orchestration/verify-deliver-release.md` |
 | amend / handoff | `.specify/memory/orchestration/iteration-handoff.md` |
+| AI drive（meta） | `.specify/memory/orchestration/iteration-drive.md` |
 
 各 speckit 阶段在 `workflow-index.yml` 中映射 `orchestration_chapters` — 进入该阶段时 Read 对应章节即可。
 

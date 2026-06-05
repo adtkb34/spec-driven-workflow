@@ -62,7 +62,16 @@ if [[ -f "$CHARTER_MD" ]]; then
         '[Step 1]'
         '[Rule 1]'
         '[Coarse capability'
+        '[Direction the user approved]'
     )
+    complexity=$(grep -E '^[[:space:]]*complexity:[[:space:]]*(trivial|standard|complex)' "$CHARTER_YML" 2>/dev/null \
+        | sed -E 's/.*complexity:[[:space:]]*//' | tr -d ' ')
+    if [[ "$complexity" == "standard" || "$complexity" == "complex" ]]; then
+        if ! grep -qE '^## Approach Trade-offs' "$CHARTER_MD"; then
+            echo "GATE-CHARTER: BLOCKED — standard/complex 的 charter.md 须含 ## Approach Trade-offs" >&2
+            fail=1
+        fi
+    fi
     for pat in "${patterns[@]}"; do
         if grep -qF "$pat" "$CHARTER_MD"; then
             echo "GATE-CHARTER: BLOCKED — charter.md 仍为模板占位: $pat" >&2

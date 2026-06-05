@@ -1,0 +1,17 @@
+# AI drive state (meta orchestration — not a P1 phase)
+version: 1
+tier: greenfield
+auto_advance: false
+consent: false
+consent_at: ""
+max_auto_steps: 12
+max_iterations: 5
+pause_at:
+  - charter_confirm
+  - global_prefs
+  - stack_confirm
+  - verify_needs_human
+  - release
+pulse_schedule: inherit
+last_pulse_at: ""
+current_iteration: 0

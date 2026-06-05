@@ -1,0 +1,6 @@
+# Grill-with-docs machine-readable state (plan phase)
+version: 1
+confirmed: false
+waived: false
+waived_reason: ""
+confirmed_at: ""

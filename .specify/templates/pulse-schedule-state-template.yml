@@ -1,0 +1,5 @@
+# Machine-maintained pulse quota (repo-level: .specify/pulse-schedule-state.yml)
+version: 1
+period_id: ""
+runs_completed: 0
+last_run_at: ""

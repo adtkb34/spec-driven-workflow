@@ -34,6 +34,7 @@ cd workflow
 在仓库根目录对 Cursor 说自然语言需求，或依次：
 
 ```
+/speckit-charter
 /speckit-specify
 /speckit-clarify
 （技术栈闸门 → 写 specs/<feature>/stack.yml）
@@ -43,6 +44,8 @@ cd workflow
 /speckit-implement
 （verify → speckit-verify）
 ```
+
+交付后可选 meta：<code>/speckit-drive</code>（greenfield 自动推进或 maintain pulse→amend）、<code>/handoff</code>（跨会话续跑）。详见 <a href="USAGE.html#drive">USAGE §1.1</a>。
 
 特性产物默认在 **`specs/`**（已在 `.gitignore`，不提交具体产品代码）。
 
@@ -65,7 +68,7 @@ cd workflow
 
 | 类别 | 示例 |
 |------|------|
-| 编排 | `speckit-*`、`workflow-retro`、`handoff` |
+| 编排 | `speckit-charter`、`speckit-*`、`speckit-drive`、`workflow-retro`、`handoff` |
 | 通用增强 | `first-principles`、`brainstorming`、`test-driven-development`、`diagnose`、`chrome-devtools-cli` … |
 | 领域 | `api-and-interface-design`、`data-modeling`、`security-and-hardening` … |
 | 可选 GCP | `gemini-api`、`cloud-run-basics`（仅 `stack.yml` 命中条件时激活） |

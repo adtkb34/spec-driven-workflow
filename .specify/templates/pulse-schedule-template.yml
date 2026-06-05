@@ -1,0 +1,27 @@
+# Repo-level scheduled maintain pulse (copy to .specify/pulse-schedule.yml)
+version: 1
+enabled: false
+timezone: Asia/Shanghai
+project_window:
+  start_date: ""
+  end_date: null
+daily_window:
+  start: "09:00"
+  end: "20:00"
+  days_of_week: [mon, tue, wed, thu, fri]
+cadence:
+  preset: weekly
+  rounds_per_period: 1
+  round_times: []
+  hour: 10
+  minute: 0
+  day_of_week: mon
+  cron: ""
+pulse_focus:
+  round_1: experience
+  round_2: new_demand
+target:
+  feature_directory: ""
+  auto_latest_delivered: false
+notifications:
+  skip_if_no_delivered_feature: true

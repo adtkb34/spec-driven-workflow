@@ -70,6 +70,22 @@ You **MUST** consider the user input before proceeding (if not empty).
 3. **stack 门**：运行 `.specify/scripts/bash/gate-stack.sh`。非零 → 停，补齐 `stack.yml`。
 4. **激活条件维度**：运行 `.specify/scripts/bash/activate-dimensions.sh --phase plan`，按输出挂载条件维度（先 L1 summary，按需 L2，见编排规则「渐进披露协议」）。
 
+## Grill-with-docs（plan 硬序 · plan.md 初稿后）
+
+在 **Completion Report 之前**、用户宣称 plan 完成之前：
+
+1. Ensure `plan.md` initial draft exists (Phase 0/1 outline complete enough to grill).
+2. Seed if missing: `grill.yml` from `.specify/templates/grill-template.yml`, `grill-log.md` from `.specify/templates/grill-log-template.md`.
+3. `activate-dimensions.sh --phase plan` → Read **`grill_with_docs`** (`.cursor/skills/grill-with-docs/SKILL.md`).
+4. Run adversarial review per skill; update `plan.md` / `spec.md` / repo `CONTEXT.md` / ADRs as needed.
+5. Close all findings in `grill-log.md` (`RESOLVED` or `WAIVED`, no `OPEN`).
+6. **trivial** (`charter.yml` or `stack.yml` → `complexity: trivial`): set `grill.yml` → `waived: true` + one-line `waived_reason` (minimal or empty `grill-log` OK).
+7. **standard/complex**: set `grill.yml` → `confirmed: true` + `confirmed_at` (ISO8601).
+8. Run `gate-grill.sh` — must PASS before plan phase complete.
+9. `run-log.sh phase --phase plan ...` **`--scripts` 须含 `gate-grill.sh`**（若本阶段实际跑了 grill）。
+
+User may say `/grill-docs` — same flow; not a separate pipeline phase.
+
 ## Outline
 
 1. **Setup**: Run `.specify/scripts/bash/setup-plan.sh --json` from repo root and parse JSON for FEATURE_SPEC, IMPL_PLAN, SPECS_DIR, BRANCH. For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
@@ -188,5 +204,6 @@ Command ends after Phase 2 planning. Report branch, IMPL_PLAN path, and generate
 - [ ] `gate-clarify.sh` 与 `gate-stack.sh` 均 exit 0；`stack.yml` 已写且 `confirmed: true`
 - [ ] `activate-dimensions.sh --phase plan` 输出的条件维度已挂载
 - [ ] Plan workflow executed and design artifacts generated
+- [ ] **grill-with-docs** 完成：`gate-grill.sh` exit 0（trivial → `grill.yml` waived；standard/complex → `grill-log.md` 无 OPEN）
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
 - [ ] Completion reported to user with branch, plan path, and generated artifacts

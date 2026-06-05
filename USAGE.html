@@ -201,7 +201,7 @@
             <h3>流水线（门 = 退出码，非零即停）</h3>
             <p class="flow-line">
               charter → <span class="gate">gate-charter</span> → specify → clarify → <span class="gate">gate-clarify</span> → 技术栈闸门+stack.yml → <span class="gate">gate-stack</span>
-              → plan → analyze → <span class="gate">gate-analyze</span> → tasks → sync-verify
+              → plan → <span class="gate">gate-grill</span>（grill-with-docs）→ analyze → <span class="gate">gate-analyze</span> → tasks → sync-verify
               → implement → verify → <span class="gate">gate-verify</span>
               → deliver?（release.enabled）→ <strong>release（仅你说「上线」）</strong>
             </p>
@@ -221,6 +221,14 @@
               <li>前期 charter→tasks：<span class="badge-opus">Opus</span></li>
               <li>implement / deliver：<span class="badge-comp">Composer</span>（卡住升 Opus）</li>
               <li>verify：<span class="badge-opus">Opus（裁判）</span></li>
+            </ul>
+          </div>
+          <div class="cheat-block">
+            <h3>Meta（非 P1 阶段）</h3>
+            <ul>
+              <li><code>/speckit-drive</code>：greenfield 自动推进 / maintain pulse</li>
+              <li><code>/handoff</code>：跨会话续跑（不代替 verify）</li>
+              <li>amend：已交付小改（<code>phase-brief --mode amend</code>）</li>
             </ul>
           </div>
           <div class="cheat-block">
@@ -314,6 +322,23 @@
         </table>
       </section>
 
+      <section id="drive">
+        <h2>1.1 AI 驱动推进（<code>/speckit-drive</code> · meta）</h2>
+        <p>不是 P1 流水线阶段；在闸门间<strong>自动 invoke</strong> 各 <code>/speckit-*</code>（greenfield），或在交付后做 <strong>pulse → queue → amend</strong>（maintain）。须特性目录 <code>drive.yml</code> 且 <code>consent: true</code>（<code>create-new-feature.sh</code> 会种子，默认 <code>auto_advance: false</code>）。</p>
+        <ul>
+          <li><strong>Greenfield</strong>：<code>tier: greenfield</code> + <code>auto_advance: true</code>；在 <code>pause_at</code>（charter 确认、global-prefs、stack、verify 需人项、release）处<strong>暂停一问</strong>，不硬闯。</li>
+          <li><strong>Maintain</strong>：<code>tier: maintain</code>；<code>pulse-log.md</code> + <code>iteration-queue.yml</code>；执行队列走 <code>phase-brief --mode amend</code>，仍须 <code>gate-verify</code>。</li>
+          <li>入口：<code>phase-brief.sh --mode drive --unlock-status</code>；编排 Read <code>.specify/memory/orchestration/iteration-drive.md</code>。</li>
+        </ul>
+        <h3>定时 pulse（按仓库配置）</h3>
+        <ol>
+          <li>复制 <code>.specify/templates/pulse-schedule-template.yml</code> → <code>.specify/pulse-schedule.yml</code>（周期、<code>project_window</code>、<code>daily_window</code>、<code>rounds_per_period</code> / <code>round_times</code>）。</li>
+          <li><code>/speckit-drive --setup-automation</code>：跑 <code>render-pulse-cron.sh --list</code>，在 Cursor Automations 为每轮建一条 cron（Instructions 用 <code>automation-maintain-pulse.prompt.md</code>）。</li>
+          <li>Automation 触发时只跑 <code>check-pulse-schedule.sh --json</code> → 一次一问 → 等你回复 → <code>record-pulse-run.sh</code>；<strong>不</strong>自动 implement/release。</li>
+        </ol>
+        <p>脚本：<code>gate-drive.sh</code>、<code>check-pulse-schedule.sh</code>、<code>record-pulse-run.sh</code>、<code>render-pulse-cron.sh</code>。</p>
+      </section>
+
       <section id="howto">
         <h2>2. 每步怎么跑好</h2>
         <h3>charter</h3>
@@ -335,8 +360,14 @@
         <h3>技术栈闸门（进 plan 前必暂停）</h3>
         <p>这是<strong>方向决策</strong>：形态、登录、持久化、运行/部署方式、框架。写入 <code>stack.yml (confirmed: true, form: …)</code>。
           你说「你定」→ AI 可推荐，但<strong>须你点头</strong>。坑：写进 Assumptions 不算是确认；<code>ui:true</code> 与 <code>form:cli</code> 不相容。</p>
-        <h3>plan / analyze</h3>
-        <p><code>activate-dimensions.sh</code> 按 stack <strong>确定性</strong>输出该挂的条件维度（api/前端/数据…）。analyze 硬核对：故事有落点、运行方式可行、维度无漏挂/误挂；<code>gate-analyze.sh</code> 非零即停。</p>
+        <h3>plan</h3>
+        <ul>
+          <li><code>plan.md</code> 初稿后跑 <strong>grill-with-docs</strong>（registry <code>grill_with_docs</code>）：对抗审查 spec/plan/CONTEXT/ADR，落盘 <code>grill-log.md</code>。</li>
+          <li><strong>trivial</strong>：<code>grill.yml</code> → <code>waived: true</code> + 理由；<strong>standard/complex</strong>：<code>confirmed: true</code> 且 log 无 <code>OPEN</code>。</li>
+          <li>可选口令 <code>/grill-docs</code> — 仍是 plan 子步骤，非独立阶段。结束须 <code>gate-grill.sh</code> PASS。</li>
+        </ul>
+        <h3>analyze</h3>
+        <p>开场复检 <code>grill-log</code>；<code>activate-dimensions.sh</code> 按 stack 输出条件维度。硬核对：故事有落点、运行方式可行、<code>gate-analyze</code>（含 delegate <code>gate-grill</code>）非零即停。</p>
         <h3>tasks → sync-verify → implement</h3>
         <p><code>tasks</code> 完成后跑 <code>sync-verify.sh</code>：从 spec/tasks 生成 <code>verify-coverage.yml</code>（US + EDGE + 形态 DoD）并 scaffold <code>verify.md</code>。
           implement 默认 Composer、外科式变更；WebView/Tauri <strong>禁止</strong> <code>window.prompt/alert/confirm</code>。</p>
@@ -611,12 +642,16 @@
             <tr><td>specify 结束</td><td><code>gate-spec-coverage.sh</code></td><td><code>spec-coverage.yml</code> + Input Q&A + Assumptions 标签 + 模板占位扫描</td></tr>
             <tr><td>进 plan 前</td><td><code>gate-clarify.sh</code></td><td>残留 <code>[NEEDS CLARIFICATION]</code> / TODO + delegate 覆盖度门</td></tr>
             <tr><td>进 plan/tasks/implement 前</td><td><code>gate-stack.sh</code></td><td>stack 缺 <code>confirmed/form</code>；standard/complex 缺 <code>global_prefs</code>；ui+cli；Tauri+cli；⑤ 环境 Q&A</td></tr>
+            <tr><td>plan 结束</td><td><code>gate-grill.sh</code></td><td><code>grill.yml</code> confirmed 或 trivial waived；<code>grill-log.md</code> 无 OPEN</td></tr>
             <tr><td>plan 后</td><td><code>activate-dimensions.sh</code></td><td>按 stack <strong>确定性</strong>输出条件维度（非门，但必跑）</td></tr>
-            <tr><td>analyze</td><td><code>gate-analyze.sh</code></td><td>模糊点 / 栈已确认 / 故事落点 / 维度路径可解析</td></tr>
+            <tr><td>analyze</td><td><code>gate-analyze.sh</code></td><td>模糊点 / 栈已确认 / delegate grill / 故事落点 / 维度路径可解析</td></tr>
             <tr><td>tasks 后、verify 前</td><td><code>sync-verify.sh</code></td><td>生成 <code>verify-coverage.yml</code>、合并 <code>verify.yml</code>、scaffold <code>verify.md</code></td></tr>
             <tr><td>verify 收尾</td><td><code>gate-verify.sh</code></td><td>内建 sync；跑 verify.yml；US/EDGE/PF 对齐与结案；残留；WebView 禁 prompt</td></tr>
             <tr><td>verify 后（<code>release.enabled</code>）</td><td><code>gate-deliver.sh</code></td><td>前置 verify PASS；<code>deliver.yml</code>；PR/CI/SHA（T1+ staging）</td></tr>
             <tr><td>用户触发上线</td><td><code>gate-release.sh</code></td><td>includes 已 deliver；<code>release.yml</code>；回滚路径 / tier 证据</td></tr>
+            <tr><td>drive 会话（meta）</td><td><code>gate-drive.sh</code></td><td><code>drive.yml</code> <code>consent: true</code> + tier 合法；<strong>不</strong>挂 specify/plan 主链（见 <a href="#drive">§1.1</a>）</td></tr>
+            <tr><td>定时 pulse（meta）</td><td><code>check-pulse-schedule.sh</code></td><td>窗口/quota/<code>round_times</code>；通过后仅一轮一问</td></tr>
+            <tr><td>pulse 成功后（meta）</td><td><code>record-pulse-run.sh</code></td><td>递增本周期 <code>runs_completed</code></td></tr>
             <tr><td>周期（可选）</td><td><code>gate-skill-freshness.sh</code></td><td>registry <code>reviewed</code> 过期 / skill 路径失效</td></tr>
           </tbody>
         </table>
@@ -627,8 +662,10 @@
         <h2>5. 已交付后要改</h2>
         <ul>
           <li><strong>bug fix</strong>：diagnose → 外科修 → 必过 verify + 补防复发验收项。</li>
-          <li><strong>小改</strong>：先改 spec → 局部 clarify/plan/analyze → implement → verify。</li>
-          <li><strong>大改</strong>：当 complex 新特性走全流水线。</li>
+          <li><strong>小改（amend）</strong>：<code>phase-brief --mode amend</code> → 先改 spec → 局部 clarify/plan/analyze → implement → verify。见 <code>.specify/memory/orchestration/iteration-handoff.md</code>。</li>
+          <li><strong>大改</strong>：当 complex 新特性走全流水线（charter 起）。</li>
+          <li><strong>跨会话</strong>：<code>/handoff</code> 读 <code>phase.yml</code> + unlock；<strong>不能</strong>代替 verify 证据。</li>
+          <li><strong>持续迭代（drive）</strong>：<code>/speckit-drive</code> maintain 档：pulse → <code>iteration-queue.yml</code> → 你说「执行队列」→ amend → verify。定时 pulse 见 <a href="#drive">§1.1</a>。</li>
         </ul>
         <p>红线：任何再入都重过 verify；行为变更<strong>先改 spec 再改码</strong>。</p>
       </section>
@@ -673,6 +710,11 @@
 .specify/scripts/bash/gate-spec-coverage.sh   # specify 结束：Post-Draft Ping 覆盖度
 .specify/scripts/bash/gate-clarify.sh
 .specify/scripts/bash/gate-stack.sh
+.specify/scripts/bash/gate-grill.sh          # plan 结束：grill-with-docs 结案
+.specify/scripts/bash/gate-drive.sh          # drive meta：drive.yml consent/tier
+.specify/scripts/bash/check-pulse-schedule.sh # 定时 pulse：窗口/quota
+.specify/scripts/bash/record-pulse-run.sh    # pulse 成功后递增周期计数
+.specify/scripts/bash/render-pulse-cron.sh   # 从 pulse-schedule 生成 cron（--list JSON）
 .specify/scripts/bash/gate-analyze.sh
 .specify/scripts/bash/sync-verify.sh
 .specify/scripts/bash/gate-verify.sh           # VERIFY_FULL=1 含 optional 慢命令

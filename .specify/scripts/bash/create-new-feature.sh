@@ -426,6 +426,14 @@ if [ "$DRY_RUN" != true ]; then
         fi
     fi
 
+    DRIVE_YML="$FEATURE_DIR/drive.yml"
+    if [ ! -f "$DRIVE_YML" ]; then
+        DRIVE_TEMPLATE="$REPO_ROOT/.specify/templates/drive-template.yml"
+        if [ -f "$DRIVE_TEMPLATE" ]; then
+            cp "$DRIVE_TEMPLATE" "$DRIVE_YML"
+        fi
+    fi
+
     # Inform the user how to persist the feature variable in their own shell
     printf '# To persist: export SPECIFY_FEATURE=%q\n' "$BRANCH_NAME" >&2
 fi

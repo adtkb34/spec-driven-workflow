@@ -36,9 +36,10 @@ phases:
     ceremony: full
   plan:
     skill: .cursor/skills/speckit-plan/SKILL.md
-    orchestration_chapters: [stack-gate.md, gates.md]
-    gates_before_next: [gate-clarify.sh, gate-stack.sh]
-    artifacts: [plan.md]
+    orchestration_chapters: [stack-gate.md, gates.md, enhancement-layer.md]
+    gates_before_next: [gate-clarify.sh, gate-stack.sh, gate-grill.sh]
+    gates_note: "进 plan 前 clarify+stack；plan 正文后须 grill-with-docs + gate-grill（trivial 可 waived）"
+    artifacts: [plan.md, grill-log.md, grill.yml]
     model_tier: strong
     ceremony: full
   analyze:
@@ -90,3 +91,9 @@ modes:
     skip_phases: [charter, specify]
   handoff:
     description: resume session — read phase.yml then phase-brief --unlock-status
+  drive:
+    description: AI-driven iteration; greenfield auto-advance between gates, maintain pulse-amend loop
+    skill: .cursor/skills/speckit-drive/SKILL.md
+    orchestration_chapters: [iteration-drive.md, iteration-handoff.md, triage-fast-track.md]
+    required_consent: drive.yml
+    tiers: [greenfield, maintain]

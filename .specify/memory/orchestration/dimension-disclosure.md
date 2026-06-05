@@ -17,7 +17,11 @@
 4. **full ceremony**：5 行开场 + 等用户「继续」→ 再 `Read` speckit 阶段 SKILL.md（P1）。
 5. **命中即用**：维度在注册表中有 skill → 直接使用，不询问。
 
-**specify 特例（背景充分性闸门）** → 已迁到 **charter** 阶段：用户若只给产品名/方向，在 `/speckit-charter` 用 brainstorming **一次一问**补齐 abc，确认后 `/speckit-specify` 从 `charter.md` 扩写 spec。详见 `speckit-charter` / `speckit-specify`。
+**charter · brainstorming 子模式** → abc 不足用 `partial_background`；standard/complex 用 `partial_approaches` 写入 charter `## Approach Trade-offs`。Speckit 内禁止 brainstorming 终态 `writing-plans`（见 brainstorming SKILL §Speckit overlay）。
+
+**specify** → 环境隔离闸门 + 从 charter 扩写；brainstorming 仅 scope 冲突时。
+
+**plan · grill_with_docs** → plan 初稿后对抗审查 spec/plan/CONTEXT/ADR；`gate-grill.sh` 仅登记 plan 一次。trivial 可 `grill.yml` waived。
 
 ## 未命中 → 用户闸门
 

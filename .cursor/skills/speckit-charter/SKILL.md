@@ -46,15 +46,29 @@ Assess trivial / standard / complex per `.specify/memory/orchestration/triage-fa
 
 Before drafting charter, verify (a) background/motivation, (b) goals/success criteria, (c) key constraints.
 
-- **Insufficient** → activate `requirements` (brainstorming skill), **one question at a time**; do not draft charter until abc can be written.
-- **Sufficient** → draft charter directly.
+- **Insufficient** → activate `requirements` (brainstorming skill), mode **`partial_background`** — **one question at a time**; do not draft charter until abc can be written.
+- **Sufficient** → continue to §3.5 (if applicable) then draft charter.
 - Activate `product_taste` (first-principles) to cut scope / veto derivative work.
+- **Visual UI scope** (layout / navigation / style choices at charter grain) → offer `visual-brainstorming` per registry `ux_design` (own message; not combined with abc Q).
+
+### 3.5 Approach trade-offs (`partial_approaches` · standard/complex only)
+
+After abc is sufficient and **before** drafting `charter.md`:
+
+- If `charter.yml` → `complexity` is **standard** or **complex**: activate brainstorming in mode **`partial_approaches`**.
+  - Propose **2–3** coarse solution directions (business/outcome level only).
+  - State trade-offs and a recommendation; get user pick or hybrid.
+  - Record in charter section **`## Approach Trade-offs`** (Chosen / Alternatives rejected / Why).
+- If **trivial**: skip (`brainstorming_modes: none` for approaches); omit the section or write `N/A — trivial single-path`.
+
+**Do not** write FR, data sources, APIs, or tech stack in this step.
 
 ### 4. Draft `charter.md`
 
 Fill template sections:
 
 - Background & Stakeholders · As-Is Summary · Goals & Success Criteria
+- **Approach Trade-offs** (standard/complex; see §3.5)
 - In-Scope / Out-of-Scope
 - **Core Business Logic** (main flow, business rules, conflict priorities)
 - Deferred to Spec / Plan

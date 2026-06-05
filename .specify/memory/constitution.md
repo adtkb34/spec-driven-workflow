@@ -48,8 +48,9 @@ AI 不得用「加开关让用户选」来回避本该自己定的实现细节�
 **全局偏好**（Cursor User Rules / Team Rules、`AGENTS.md`、Cursor Memories、Copilot 用户级 memories）
 常驻且跨项目，处于冲突裁决链**最低优先级**。默认立场为**隔离**：未经用户在「环境隔离闸门」
 明确放行前，一律不采纳；即便放行，也不得覆盖上位规则（阶段门 / constitution / 维度 skill）。
-闸门在 **specify 起始（硬序①，先于背景 brainstorming）**触发一次：决策记入
+闸门在 **specify 开场（硬序②，须 charter 已 `gate-charter` PASS）**触发一次：决策记入
 `FEATURE_DIR/global-prefs.yml`（`confirmed: true`），并同步 `stack.yml` 的 `global_prefs`；本特性沿用。
+背景 abc 与方案取舍在 **charter** 阶段经 brainstorming 子模式完成，不在 specify 重复。
 `gate-global-prefs.sh` 机械校验，非仅文档自觉。
 
 ## 模型路由（Model Routing）
@@ -233,6 +234,15 @@ implement→verify→deliver→再 release。外部发布工具（gstack `/ship`
 3. **修 bug 必补防复发项**：缺陷暴露的场景必须沉淀为一条新的验收/回归，防止同类问题再次发生。
 4. **触发再发布则回发布范式**：已上线特性的变更若需重新发布，按 deliver→release，**回滚路径先于部署**。
 
+## AI 驱动推进（Drive · meta 模式）
+
+`/speckit-drive` 是**编排壳**，不是第 11 个 P1 阶段。详见 `.specify/memory/orchestration/iteration-drive.md`。
+
+- **greenfield**：`drive.yml` 须 `consent: true` 且 `auto_advance: true` 方可在 **pause_at 以外**的闸门之间自动 invoke 下一 `speckit-*` 阶段；**charter 确认、环境隔离、技术栈确认、verify 需人项、release** 必须暂停等用户。
+- **maintain**：交付后 **pulse**（一次一问）→ 可选 **iteration-queue** → 用户显式要求才 **amend→verify**；不得无人回复自动改码。
+- **scheduled pulse**（`.specify/pulse-schedule.yml` + Cursor Automation）：仅 **采集**体验/需求（`pulse-log.md`）；`check-pulse-schedule.sh` 不通过则静默退出；`record-pulse-run.sh` 维护周期配额。
+- Drive **不得**覆盖阶段门、不得替代 `verify.md` 证据、不得自动 release。
+
 ## 质量红线（Quality Redlines · 自动补齐，不询问用户）
 
 - 零模糊点：spec 无 `[NEEDS CLARIFICATION]` 且 `gate-spec-coverage.sh` PASS 才进 plan。
@@ -252,7 +262,8 @@ implement→verify→deliver→再 release。外部发布工具（gstack `/ship`
 各阶段执行前应核对：是否遵守模型路由、是否触发用户闸门、是否过技术栈闸门、
 是否守住质量红线、是否通过 verify 阶段的可执行 DoD。
 
-**Version**: 1.12.0 | **Ratified**: 2026-06-02 | **Last Amended**: 2026-06-04
+**Version**: 1.13.0 | **Ratified**: 2026-06-02 | **Last Amended**: 2026-06-05
+<!-- v1.13.0: meta drive（speckit-drive）+ pulse-schedule Automation + gate-drive；不新增 P1 阶段 -->
 <!-- v1.12.0: charter 阶段 + gate-charter.sh + charter.md/yml；abc/业务逻辑迁出 specify；gate 仅 charter.gates_before_next 登记一次 -->
 <!-- v1.11.0: gate-global-prefs.sh + global-prefs.yml（specify 开场硬序①；无 FEATURE_DIR 也要先问）；gate-spec-coverage/clarify delegate；create-new-feature 种子模板 -->
 <!-- v1.10.0: gate-spec-coverage.sh + spec-coverage.yml（Post-Draft Ping 机械门）；gate-clarify 聚合覆盖度；gate-stack ⑤ Q&A；gate-analyze 查 plan.md；Assumptions [ASSUMPTION]/[CONFIRMED] -->

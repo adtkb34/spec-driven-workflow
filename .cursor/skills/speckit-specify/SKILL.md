@@ -87,7 +87,8 @@ The text the user typed after `/speckit-specify` in the triggering message **is*
 1. Read `charter.md` + `charter.yml`；`## Background & Goals` 写 **3–5 句摘要 + 链接** `charter.md`，不复制全文。
 2. User Stories / FR / Input Q&A / Post-Draft Ping 逻辑不变；**首条不问卷 ②③④⑤**（未提到则留 Ping）。
 3. 若发现与 charter 冲突，**先改 charter（回 /speckit-charter）**，不得在 spec 静默扩 scope。
-4. **第一性原理**：把用户功能点当待验证假设；未确认项用 `[NEEDS CLARIFICATION]` 或 Assumptions 标签。
+4. **Brainstorming（specify 限定）**：abc 已在 charter 完成；**仅**当用户要求扩 scope 或与 charter 冲突需重新对齐时，激活 `requirements`（brainstorming）— 一次一问或回 charter；**禁止**在 specify 重做 abc 或跑 `partial_approaches` / `writing-plans`。
+5. **第一性原理**：把用户功能点当待验证假设；未确认项用 `[NEEDS CLARIFICATION]` 或 Assumptions 标签。
 
 Given that feature description and confirmed charter, do this:
 
@@ -150,8 +151,8 @@ Given that feature description and confirmed charter, do this:
        If empty: ERROR "No feature description provided"
     2. Extract key concepts from description
        Identify: actors, actions, data, constraints
-    3. For unclear aspects (**前提：已通过上面的 Background-Sufficiency Gate**；闸门未放行时不得进入本步靠猜填空):
-       - Make informed guesses based on context and industry standards **only for low-impact details** (e.g. data retention, error-message wording). 对涉及背景/目标/成功标准/核心范围的缺口，按闸门要求先提问补齐，禁止用行业常识猜满。
+    3. For unclear aspects (**前提：charter 已 confirmed 且 gate-charter PASS**；背景/目标缺口应回 charter，不得在本步靠猜填空):
+       - Make informed guesses based on context and industry standards **only for low-impact details** (e.g. data retention, error-message wording). 对涉及背景/目标/成功标准/核心范围的缺口，回 `/speckit-charter` 或按 §Brainstorming（specify 限定）对齐，禁止用行业常识猜满。
        - Only mark with [NEEDS CLARIFICATION: specific question] if:
          - The choice significantly impacts feature scope or user experience
          - Multiple reasonable interpretations exist with different implications
@@ -376,9 +377,9 @@ Report completion to the user with:
 
 ### For AI Generation
 
-When creating this spec from a user prompt (**仅在已通过 Background-Sufficiency Gate 后适用**；闸门未放行时先 brainstorming 补背景，不要进入下面的 guessing):
+When creating this spec from a confirmed charter (**charter 已 gate-charter PASS**；abc 缺口回 charter，不要在 specify 补背景):
 
-1. **Make informed guesses (低影响细节 only)**: Use context, industry standards, and common patterns to fill **low-impact** gaps. 背景/动机/目标/成功标准/核心范围属于高影响项，不靠猜——按闸门先一次一问补齐。
+1. **Make informed guesses (低影响细节 only)**: Use context, industry standards, and common patterns to fill **low-impact** gaps. 背景/动机/目标/成功标准/核心范围属于高影响项，不靠猜——回 charter 或按 §Brainstorming（specify 限定）对齐。
 2. **Document assumptions**: 每条 Assumptions 以 `[ASSUMPTION]` 或 `[CONFIRMED]` 前缀标注来源（见 Post-Draft §6）
 3. **Limit clarifications**: Maximum 3 [NEEDS CLARIFICATION] markers - use only for critical decisions that:
    - Significantly impact feature scope or user experience

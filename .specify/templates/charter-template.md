@@ -30,6 +30,17 @@
 
 [Goals and measurable success criteria]
 
+## Approach Trade-offs
+
+<!--
+  standard/complex: 2–3 coarse approaches + chosen direction (partial_approaches).
+  trivial: N/A — single path.
+-->
+
+**Chosen:** [Direction the user approved]
+
+**Alternatives considered:** [Brief bullets + why not]
+
 ## In-Scope / Out-of-Scope
 
 **In scope:**

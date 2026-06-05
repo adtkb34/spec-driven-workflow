@@ -3,6 +3,27 @@ name: brainstorming
 description: "You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation."
 ---
 
+## Speckit overlay（registry `requirements` · bind_phase: charter / specify / clarify）
+
+When invoked from **Speckit** (`/speckit-charter`, `/speckit-specify`, `/speckit-clarify`), read `brainstorming_modes` from `.specify/workflows/phase-index.yml` (via `phase-brief.sh` or triage). **Do not** run the full checklist below unless mode is `full` and the user explicitly left the Speckit feature pipeline.
+
+| Mode | When | Do | Return to |
+|------|------|-----|-----------|
+| `none` | trivial + abc sufficient | Do not log brainstorming as used | charter / specify |
+| `partial_background` | abc insufficient | One question at a time; purpose / constraints / success only (①) | charter draft |
+| `partial_approaches` | standard/complex, charter, abc sufficient | 2–3 coarse approaches + trade-offs + recommendation; **no** FR, APIs, tech stack | charter `## Approach Trade-offs` |
+| `full` | Non-Speckit standalone project only | Full checklist below | `writing-plans` |
+
+**Speckit prohibitions (modes ≠ `full`):**
+
+- Do **not** invoke `writing-plans` or any implementation skill.
+- Do **not** write to `docs/superpowers/specs/` as terminal artifact; output goes to `charter.md` / `spec.md` / conversation per phase skill.
+- Do **not** run the Visual Companion offer during `partial_background` unless `ux_design` is separately activated for a visual charter question.
+
+`run-log.sh --skills`：仅在实际使用 brainstorming 时记录；`none` 模式不记。
+
+---
+
 # Brainstorming Ideas Into Designs
 
 Help turn ideas into fully formed designs and specs through natural collaborative dialogue.

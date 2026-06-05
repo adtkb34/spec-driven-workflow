@@ -10,14 +10,19 @@
 | specify 结束 | `gate-spec-coverage.sh` | Post-Draft Ping 落盘；**delegate** `gate-global-prefs.sh` |
 | 进 plan 前 | `gate-clarify.sh` | 占位符扫描 + **delegate** `gate-global-prefs` + `gate-spec-coverage` |
 | 进 plan/tasks/implement 前 | `gate-stack.sh` | `stack.yml` 存在、`confirmed: true`、有 `form`；stack 确认时 spec Input Q&A ⑤ 须有 Q→A |
+| plan 结束 | `gate-grill.sh` | `grill.yml` confirmed 或 trivial waived；`grill-log.md` 无 OPEN（仅登记 plan 一次） |
 | plan 后 / analyze | `activate-dimensions.sh` | 按 `stack.yml` 输出该激活的条件维度 |
-| analyze | `gate-analyze.sh` | 聚合：无模糊点/覆盖度/栈已确认/plan.md 存在/故事有落点/维度路径可解析 |
+| analyze | `gate-analyze.sh` | 聚合：无模糊点/覆盖度/栈已确认/plan.md 存在/**delegate gate-grill**/故事有落点/维度路径可解析 |
 | tasks 后 / implement 后 | `sync-verify.sh` | 从 spec/tasks 生成 coverage 并合并 verify.yml |
 | implement 后 | `gate-verify.sh` | sync + 跑 verify.yml + 对齐 + 扫残留 |
 | verify 后（release.enabled） | `gate-deliver.sh` | per-feature：前置 verify + deliver.yml + PR/CI/SHA |
 | 用户触发上线 | `gate-release.sh` | 仓库级：includes 都已 deliver + release.yml + 回滚/SHA |
+| drive 会话（meta） | `gate-drive.sh` | `drive.yml` 存在、`consent: true`、`tier` 合法、步数/迭代未用尽；**不**挂在 specify/plan 主链 |
+| 定时 pulse（meta） | `check-pulse-schedule.sh` | 仓库级：窗口/quota/`round_times`；通过后仅一轮一问，收尾 `record-pulse-run.sh` |
 
 `phase-brief.sh --unlock-status` **实时**跑 gate，**不在 phase.yml 存 unlock 布尔值**。
+
+`gate-drive.sh` / `check-pulse-schedule.sh` 仅供 `/speckit-drive` 与 Cursor Automation；不得替代 `gate-verify.sh` 验收。
 
 门只判可机械判定项；主观质量仍由 strong 模型判断，门与人工互补。
 

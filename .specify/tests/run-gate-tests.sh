@@ -295,6 +295,12 @@ Excel-based scheduling today.
 
 Reduce planning cycle time by 30% within Q3.
 
+## Approach Trade-offs
+
+**Chosen:** Single web app for planners
+
+**Alternatives considered:** Spreadsheet add-in — rejected for multi-user sync
+
 ## In-Scope / Out-of-Scope
 
 **In scope:**
@@ -346,6 +352,59 @@ FIX="$(new_fixture charter-template)"
 charter_ok
 cp "$BASH_DIR/../../templates/charter-template.md" "$FIX/charter.md" 2>/dev/null || true
 expect "模板占位 -> BLOCK" 1 gate-charter.sh
+
+echo "── gate-grill ────────────────────────────────────────────"
+FIX="$(new_fixture grill-pass)"
+grill_ok() {
+    cat > "$FIX/grill.yml" <<'YAML'
+version: 1
+confirmed: true
+waived: false
+waived_reason: ""
+confirmed_at: "2026-06-04T00:00:00Z"
+YAML
+}
+
+grill_pass_log() {
+    cat > "$FIX/grill-log.md" <<'LOG'
+# Grill Log
+
+## Findings
+
+| ID | Status | Source | Finding | Resolution |
+|----|--------|--------|---------|------------|
+| G1 | RESOLVED | plan.md | Scope aligned with charter | Verified |
+LOG
+}
+
+grill_ok
+grill_pass_log
+expect "confirmed + no OPEN -> PASS" 0 gate-grill.sh
+
+FIX="$(new_fixture grill-open)"
+grill_ok
+cat > "$FIX/grill-log.md" <<'LOG'
+# Grill Log
+
+## Findings
+
+| ID | Status | Source | Finding | Resolution |
+|----|--------|--------|---------|------------|
+| G1 | OPEN | plan.md | Missing error handling | |
+LOG
+expect "OPEN finding -> BLOCK" 1 gate-grill.sh
+
+FIX="$(new_fixture grill-waived)"
+cat > "$FIX/grill.yml" <<'YAML'
+version: 1
+confirmed: false
+waived: true
+waived_reason: trivial single-path feature
+YAML
+expect "trivial waived -> PASS" 0 gate-grill.sh
+
+FIX="$(new_fixture grill-missing)"
+expect "无 grill.yml -> BLOCK" 1 gate-grill.sh
 
 echo "── gate-clarify ──────────────────────────────────────────"
 FIX="$(new_fixture clarify-pass)"
@@ -584,6 +643,128 @@ else
     printf '  \033[31mFAIL\033[0m %-44s\n' "workflow-index.yml missing"; fail=$((fail + 1))
 fi
 
+echo "── workflow-index grill gate placement ───────────────────"
+if [[ -f "$WI" ]]; then
+    grill_count=$(grep -c 'gate-grill\.sh' "$WI" 2>/dev/null || echo 0)
+    if [[ "$grill_count" -eq 1 ]]; then
+        printf '  \033[32mok\033[0m   %-44s\n' "gate-grill.sh appears once"; pass=$((pass + 1))
+    else
+        printf '  \033[31mFAIL\033[0m %-44s (count=%s)\n' "gate-grill.sh singleton" "$grill_count"; fail=$((fail + 1))
+    fi
+    if [[ "$HAS_RUBY" -eq 1 ]]; then
+        if ruby -ryaml -e '
+wi = ARGV[0]
+d = YAML.load_file(wi)
+gates = (d.dig("phases", "specify", "gates_before_next") || [])
+exit(gates.include?("gate-grill.sh") ? 1 : 0)
+' "$WI" >/dev/null 2>&1; then
+            printf '  \033[32mok\033[0m   %-44s\n' "specify gates omit gate-grill"; pass=$((pass + 1))
+        else
+            printf '  \033[31mFAIL\033[0m %-44s\n' "specify gates omit gate-grill"; fail=$((fail + 1))
+        fi
+    else
+        printf '  \033[33mskip\033[0m %-44s (no ruby)\n' "specify gates omit gate-grill"; skip=$((skip + 1))
+    fi
+else
+    printf '  \033[31mFAIL\033[0m %-44s\n' "workflow-index.yml missing (grill)"; fail=$((fail + 1))
+fi
+
+echo "── gate-drive ────────────────────────────────────────────"
+FIX=$(new_fixture "gate-drive-pass")
+cat > "$FIX/drive.yml" <<'YAML'
+version: 1
+tier: greenfield
+auto_advance: false
+consent: true
+max_auto_steps: 12
+max_iterations: 5
+YAML
+expect "drive consent true" 0 gate-drive.sh
+
+FIX=$(new_fixture "gate-drive-block")
+cat > "$FIX/drive.yml" <<'YAML'
+version: 1
+tier: greenfield
+consent: false
+max_auto_steps: 12
+YAML
+expect_blocked "drive no consent" gate-drive.sh
+
+echo "── check-pulse-schedule ─────────────────────────────────"
+if [[ "$HAS_RUBY" -eq 1 ]]; then
+    PULSE_SCHED="$TMP_ROOT/pulse-schedule.yml"
+    PULSE_STATE="$TMP_ROOT/pulse-schedule-state.yml"
+    cat > "$PULSE_SCHED" <<YAML
+version: 1
+enabled: true
+timezone: UTC
+project_window:
+  start_date: ""
+  end_date: null
+daily_window:
+  start: "00:00"
+  end: "23:59"
+  days_of_week: [mon, tue, wed, thu, fri, sat, sun]
+cadence:
+  preset: daily
+  rounds_per_period: 2
+target:
+  feature_directory: "$FIX"
+  auto_latest_delivered: false
+YAML
+    PULSE_TODAY=$(date -u +%Y-%m-%d 2>/dev/null || echo "2026-06-04")
+    cat > "$PULSE_STATE" <<YAML
+version: 1
+period_id: "$PULSE_TODAY"
+runs_completed: 2
+last_run_at: ""
+YAML
+    export PULSE_SCHEDULE_FILE="$PULSE_SCHED" PULSE_SCHEDULE_STATE_FILE="$PULSE_STATE"
+    "$BASH_DIR/check-pulse-schedule.sh" --json >/dev/null 2>&1
+  got=$?
+  if [[ "$got" == "1" ]]; then
+    printf '  \033[32mok\033[0m   %-44s (quota blocked)\n' "runs_completed >= rounds"
+    pass=$((pass + 1))
+  else
+    printf '  \033[31mFAIL\033[0m %-44s (want 1, got %s)\n' "pulse quota" "$got"
+    fail=$((fail + 1))
+  fi
+  cat > "$PULSE_STATE" <<YAML
+version: 1
+period_id: "$(date -u +%Y-%m-%d 2>/dev/null || echo 2026-06-04)"
+runs_completed: 0
+last_run_at: ""
+YAML
+  cat > "$PULSE_SCHED" <<YAML
+version: 1
+enabled: true
+timezone: UTC
+project_window:
+  start_date: ""
+  end_date: null
+daily_window:
+  start: "00:00"
+  end: "23:59"
+  days_of_week: [mon, tue, wed, thu, fri, sat, sun]
+cadence:
+  preset: daily
+  rounds_per_period: 2
+target:
+  feature_directory: "$FIX"
+YAML
+  if PULSE_SCHEDULE_FILE="$PULSE_SCHED" PULSE_SCHEDULE_STATE_FILE="$PULSE_STATE" \
+     "$BASH_DIR/check-pulse-schedule.sh" --json 2>/dev/null | grep -q '"should_run": true'; then
+    printf '  \033[32mok\033[0m   %-44s\n' "pulse should_run true"
+    pass=$((pass + 1))
+  else
+    printf '  \033[31mFAIL\033[0m %-44s\n' "pulse should_run true"
+    fail=$((fail + 1))
+  fi
+  unset PULSE_SCHEDULE_FILE PULSE_SCHEDULE_STATE_FILE
+else
+  printf '  \033[33mskip\033[0m %-44s (no ruby)\n' "check-pulse-schedule"; skip=$((skip + 1))
+fi
+
 echo "── phase-brief ───────────────────────────────────────────"
 if [[ "$HAS_RUBY" -eq 1 ]]; then
 FIX=$(new_fixture "phase-brief")
@@ -605,6 +786,20 @@ if SPECIFY_FEATURE_DIRECTORY="$FIX" "$BASH_DIR/phase-brief.sh" --phase specify -
     printf '  \033[32mok\033[0m   %-44s\n' "specify --json has phase"; pass=$((pass + 1))
 else
     printf '  \033[31mFAIL\033[0m %-44s\n' "specify --json has phase"; fail=$((fail + 1))
+fi
+FIX=$(new_fixture "phase-brief-drive")
+echo "current_phase: charter" > "$FIX/phase.yml"
+cat > "$FIX/drive.yml" <<'YAML'
+version: 1
+tier: greenfield
+consent: true
+auto_advance: true
+max_auto_steps: 12
+YAML
+if SPECIFY_FEATURE_DIRECTORY="$FIX" "$BASH_DIR/phase-brief.sh" --phase charter --mode drive --json 2>/dev/null | grep -q '"mode": "drive"'; then
+    printf '  \033[32mok\033[0m   %-44s\n' "drive --json mode"; pass=$((pass + 1))
+else
+    printf '  \033[31mFAIL\033[0m %-44s\n' "drive --json mode"; fail=$((fail + 1))
 fi
 else
     printf '  \033[33mskip\033[0m %-44s (no ruby)\n' "phase-brief tests"; skip=$((skip + 1))

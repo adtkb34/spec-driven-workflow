@@ -15,7 +15,8 @@ phases:
     brainstorming_default: partial_background
     questions:
       - "当前 P1 phase 是否为 charter？FEATURE_DIR 解析了吗？"
-      - "背景 abc 够起草 charter 吗？不足则 brainstorming 一次一问"
+      - "背景 abc 够起草 charter 吗？不足则 brainstorming partial_background 一次一问"
+      - "standard/complex 是否已 partial_approaches（2–3 方案取舍写入 ## Approach Trade-offs）？"
       - "charter.md 含 Core Business Logic（主流程/规则/优先级）吗？"
       - "已向用户展示 charter 并获确认？charter.yml confirmed:true？"
       - "stack.complexity / charter.yml complexity 档位对吗（trivial/standard/complex）？"
@@ -60,11 +61,14 @@ phases:
       - "技术栈闸门 ⑤/②迁移：每条 Q→A 已展示并落盘 Input Q&A ⑤（及 ② 迁移）？"
       - "stack.confirmed=true 且结论与 Q&A 一致？"
       - "plan 是否只写 HOW，不把未确认栈写进 spec Assumptions？"
+      - "plan.md 初稿后是否已 grill-with-docs 且 gate-grill PASS（trivial → grill.yml waived）？"
     forbid_summary:
       - "stack 未确认就写 plan.md"
+      - "未跑 gate-grill 就宣称 plan 完成"
   analyze:
     ceremony: minimal
     questions:
+      - "grill-log 复检：plan/spec 变更后是否仍无 OPEN？"
       - "每条用户故事在 plan/tasks 有落点吗？"
       - "gate-analyze 机械项全过吗？"
       - "activate-dimensions 与 stack 一致吗？"
@@ -107,3 +111,16 @@ phases:
       - "回滚路径与 SHA 证据齐全？"
     forbid_summary:
       - "verify 后自动上生产"
+modes:
+  drive:
+    ceremony: full
+    questions:
+      - "drive.yml 已 consent:true？授权范围（greenfield 自动推进 / maintain pulse-amend）用户是否明确？"
+      - "tier 正确吗？greenfield 在闸门间 auto_advance；maintain 走 pulse→queue→amend。"
+      - "pause_at 人工闸门（charter_confirm、global_prefs、stack_confirm、verify_needs_human、release）会在摘要后一问暂停吗？"
+      - "max_auto_steps / max_iterations 未用尽？"
+      - "scheduled pulse 仅采集：Automation 跑完是否 record-pulse-run，且未无人回复就 implement？"
+    forbid_summary:
+      - "绕过 gate-charter / gate-stack / gate-verify / gate-release"
+      - "用 drive 自述替代 verify.md 证据"
+      - "无 consent 自动 release"

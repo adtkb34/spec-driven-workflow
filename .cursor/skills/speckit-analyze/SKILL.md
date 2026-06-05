@@ -54,9 +54,10 @@ You **MUST** consider the user input before proceeding (if not empty).
 ## Phase Entry (P0 → P2 → P1 · analyze)
 
 1. `phase-brief.sh --phase analyze --questions-only` (**minimal ceremony** — P0 only, no repeated opening).
-2. P2: `gate-analyze.sh` must PASS before implement.
-3. After P2 → `activate-dimensions.sh --phase analyze` → verify dimension activation vs stack.
-4. End: `run-log.sh phase --phase analyze ...`.
+2. **Grill 复检（开场）**：Read `grill-log.md` + `grill.yml`；若 plan/spec 自 grill 后有变，激活 `grill_with_docs` 快速复检；新 `OPEN` 须回 plan 结案后再继续。
+3. P2: `gate-analyze.sh` must PASS before implement（含 delegate `gate-grill.sh`）。
+4. After P2 → `activate-dimensions.sh --phase analyze` → verify dimension activation vs stack.
+5. End: `run-log.sh phase --phase analyze ...`.
 
 ## Goal
 

@@ -1,0 +1,10 @@
+# Maintain iteration queue (triage from pulse → amend)
+version: 1
+items: []
+# item schema:
+#   id: Q1
+#   title: short summary
+#   source_pulse: P1
+#   kind: bug | change | experience
+#   status: OPEN | IN_PROGRESS | DONE
+#   spec_refs: []
