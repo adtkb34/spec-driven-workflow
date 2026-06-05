@@ -16,6 +16,12 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
+## Layered paths
+
+- Resolve `PLAN_DIR` / `IMPL_PLAN` via `check-prerequisites.sh --paths-only` (layered: `specs/<module>/charters/<c>/specs/<dim>/plans/<plan>/plan.md`).
+- Keep `plan.md` thin; detail in `plan/docs/*` registered in `plan-manifest.yml`. Link spec shards instead of duplicating.
+- `verify.md` / `deliver.md` belong under `PLAN_DIR` only (see `.specify/memory/layered-artifacts.md`).
+
 ## Pre-Execution Checks
 
 **Check for extension hooks (before planning)**:

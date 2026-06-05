@@ -1,0 +1,10 @@
+version: 1
+slug: MODULE_SLUG
+title: MODULE_TITLE
+available_spec_dimensions:
+  - functional
+  - data
+  - api
+  - ux
+default_spec_dimension: functional
+shared_index: []

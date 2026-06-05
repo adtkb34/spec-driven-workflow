@@ -263,6 +263,184 @@ find_feature_dir_by_prefix() {
     fi
 }
 
+# Read a string field from .specify/feature.json (jq -> python3 -> empty).
+read_feature_json_field() {
+    local repo_root="$1"
+    local field="$2"
+    local fj="$repo_root/.specify/feature.json"
+    [[ -f "$fj" ]] || return 0
+
+    if command -v jq >/dev/null 2>&1; then
+        jq -r --arg k "$field" '.[$k] // empty' "$fj" 2>/dev/null || true
+        return 0
+    fi
+    if command -v python3 >/dev/null 2>&1; then
+        python3 -c "import json,sys; d=json.load(open(sys.argv[1])); v=d.get(sys.argv[2]); print(v if v is not None else '')" "$fj" "$field" 2>/dev/null || true
+        return 0
+    fi
+    printf '%s' ''
+}
+
+# True when directory is a layered module root (module.yml or charters/).
+is_layered_module_dir() {
+    local d="$1"
+    [[ -d "$d" ]] || return 1
+    [[ -f "$d/module.yml" ]] && return 0
+    [[ -d "$d/charters" ]] && return 0
+    return 1
+}
+
+# True when directory is a spec dimension (spec.md + optional spec-manifest.yml).
+is_layered_spec_dim_dir() {
+    local d="$1"
+    [[ -f "$d/spec.md" ]] && [[ -d "$(dirname "$d")/plans" || -f "$d/spec-manifest.yml" || -f "$d/spec.yml" ]] && return 0
+    [[ -f "$d/spec.md" && "$d" == */specs/* ]] && return 0
+    return 1
+}
+
+# Detect layered layout from any resolved directory path.
+layered_layout_from_dir() {
+    local dir="$1"
+    local d="$dir"
+    while [[ -n "$d" && "$d" != "/" ]]; do
+        if is_layered_module_dir "$d"; then
+            printf '%s\n' "$d"
+            return 0
+        fi
+        d="$(dirname "$d")"
+    done
+    return 1
+}
+
+# Build layered path variables; prints same format as get_feature_paths.
+# Args: repo_root module charter spec_dimension plan task_set [work_root_override] [module_dir_abs] [charter_dir_abs]
+emit_layered_paths() {
+    local repo_root="$1"
+    local module="$2"
+    local charter="$3"
+    local spec_dim="$4"
+    local plan="$5"
+    local task_set="$6"
+    local work_root_override="${7:-}"
+    local module_dir_override="${8:-}"
+    local charter_dir_override="${9:-}"
+
+    local module_dir="${module_dir_override:-$repo_root/specs/$module}"
+    local charter_dir="${charter_dir_override:-$module_dir/charters/$charter}"
+    local spec_dim_dir="$charter_dir/specs/$spec_dim"
+    local plan_dir="$spec_dim_dir/plans/$plan"
+    local task_dir="$plan_dir/tasks/$task_set"
+    local work_root="$work_root_override"
+    if [[ -z "$work_root" ]]; then
+        if [[ -d "$task_dir" ]]; then
+            work_root="$task_dir"
+        elif [[ -d "$plan_dir" ]]; then
+            work_root="$plan_dir"
+        else
+            work_root="$spec_dim_dir"
+        fi
+    fi
+    [[ "$work_root" != /* ]] && work_root="$repo_root/$work_root"
+
+    local feature_dir="$spec_dim_dir"
+    local rel_feature_dir
+    if [[ -n "$module_dir_override" ]]; then
+        rel_feature_dir=$(realpath --relative-to="$repo_root" "$spec_dim_dir" 2>/dev/null || echo "$spec_dim_dir")
+    else
+        rel_feature_dir="specs/$module/charters/$charter/specs/$spec_dim"
+    fi
+
+    printf 'LAYERED_LAYOUT=%q\n' "true"
+    printf 'MODULE_DIR=%q\n' "$module_dir"
+    printf 'CHARTER_DIR=%q\n' "$charter_dir"
+    printf 'CHARTER_SPEC=%q\n' "$charter_dir/charter.md"
+    printf 'SPEC_DIM_DIR=%q\n' "$spec_dim_dir"
+    printf 'SPEC_DIMENSION=%q\n' "$spec_dim"
+    printf 'PLAN_DIR=%q\n' "$plan_dir"
+    printf 'PLAN_SLUG=%q\n' "$plan"
+    printf 'TASK_DIR=%q\n' "$task_dir"
+    printf 'TASK_SET=%q\n' "$task_set"
+    printf 'WORK_ROOT=%q\n' "$work_root"
+    printf 'FEATURE_DIR=%q\n' "$feature_dir"
+    printf 'FEATURE_SPEC=%q\n' "$spec_dim_dir/spec.md"
+    printf 'IMPL_PLAN=%q\n' "$plan_dir/plan.md"
+    printf 'TASKS=%q\n' "$task_dir/tasks.md"
+    printf 'VERIFY_MD=%q\n' "$plan_dir/verify.md"
+    printf 'DELIVER_MD=%q\n' "$plan_dir/deliver.md"
+    printf 'FEATURE_DIRECTORY=%q\n' "$rel_feature_dir"
+    printf 'RESEARCH=%q\n' "$plan_dir/research.md"
+    printf 'DATA_MODEL=%q\n' "$plan_dir/data-model.md"
+    printf 'QUICKSTART=%q\n' "$plan_dir/quickstart.md"
+    printf 'CONTRACTS_DIR=%q\n' "$plan_dir/contracts"
+}
+
+# Resolve layered v3 from feature.json or from a spec-dimension directory path.
+try_resolve_layered_paths() {
+    local repo_root="$1"
+    local current_branch="$2"
+    local has_git_repo="$3"
+
+    local version module charter spec_dim plan task_set work_root fd
+    version=$(read_feature_json_field "$repo_root" "version")
+    module=$(read_feature_json_field "$repo_root" "module")
+    charter=$(read_feature_json_field "$repo_root" "charter")
+    spec_dim=$(read_feature_json_field "$repo_root" "spec_dimension")
+    plan=$(read_feature_json_field "$repo_root" "plan")
+    task_set=$(read_feature_json_field "$repo_root" "task_set")
+    work_root=$(read_feature_json_field "$repo_root" "work_root")
+    fd=$(read_feature_json_feature_directory "$repo_root")
+
+    # v3 explicit
+    if [[ "$version" == "3" && -n "$module" && -n "$charter" && -n "$spec_dim" ]]; then
+        plan="${plan:-default}"
+        task_set="${task_set:-default}"
+        printf 'REPO_ROOT=%q\n' "$repo_root"
+        printf 'CURRENT_BRANCH=%q\n' "$current_branch"
+        printf 'HAS_GIT=%q\n' "$has_git_repo"
+        emit_layered_paths "$repo_root" "$module" "$charter" "$spec_dim" "$plan" "$task_set" "$work_root"
+        return 0
+    fi
+
+    # feature_directory must point at spec dimension inside layered tree
+    if [[ -n "$fd" ]]; then
+        local abs_fd="$fd"
+        [[ "$abs_fd" != /* ]] && abs_fd="$repo_root/$abs_fd"
+        if [[ -f "$abs_fd/spec.md" ]] && layered_layout_from_dir "$abs_fd" >/dev/null; then
+            local module_root charter_dir_abs
+            module_root=$(layered_layout_from_dir "$abs_fd")
+            module=$(basename "$module_root")
+            charter_dir_abs="$(cd "$(dirname "$abs_fd")/.." && pwd)"
+            charter=$(basename "$charter_dir_abs")
+            spec_dim=$(basename "$abs_fd")
+            plan="default"
+            task_set="default"
+            if [[ -f "$abs_fd/spec.yml" ]] && command -v ruby >/dev/null 2>&1; then
+                plan=$(ruby -ryaml -e "d=YAML.load_file('$abs_fd/spec.yml')||{}; print d['active_plan']||'default'" 2>/dev/null || echo default)
+                task_set=$(ruby -ryaml -e "d=YAML.load_file('$abs_fd/spec.yml')||{}; print d['active_task_set']||'default'" 2>/dev/null || echo default)
+            fi
+            printf 'REPO_ROOT=%q\n' "$repo_root"
+            printf 'CURRENT_BRANCH=%q\n' "$current_branch"
+            printf 'HAS_GIT=%q\n' "$has_git_repo"
+            emit_layered_paths "$repo_root" "$module" "$charter" "$spec_dim" "$plan" "$task_set" "" "$module_root" "$charter_dir_abs"
+            return 0
+        fi
+        speckit_layered_paths_error "$abs_fd"
+        return 1
+    fi
+
+    return 1
+}
+
+# Print a consistent error when a flat or unknown specs path is used.
+speckit_layered_paths_error() {
+    local path="$1"
+    echo "ERROR: Unsupported specs layout at: $path" >&2
+    echo "  Flat specs/NNN-name/ directories are no longer supported." >&2
+    echo "  Use layered layout (see .specify/memory/layered-artifacts.md)." >&2
+    echo "  Scaffold: create-worktree.sh charter --module <module> <charter>" >&2
+    echo "  One-time import: migrate-specs-layout.sh --source <old-dir>" >&2
+}
+
 get_feature_paths() {
     local repo_root=$(get_repo_root)
     local current_branch=$(get_current_branch)
@@ -272,46 +450,68 @@ get_feature_paths() {
         has_git_repo="true"
     fi
 
-    # Resolve feature directory.  Priority:
-    #   1. SPECIFY_FEATURE_DIRECTORY env var (explicit override)
-    #   2. .specify/feature.json "feature_directory" key (persisted by /speckit-specify)
-    #   3. Branch-name-based prefix lookup (legacy fallback)
-    local feature_dir
+    # Explicit override: must be a spec-dimension directory inside layered module tree.
     if [[ -n "${SPECIFY_FEATURE_DIRECTORY:-}" ]]; then
-        feature_dir="$SPECIFY_FEATURE_DIRECTORY"
-        # Normalize relative paths to absolute under repo root
+        local feature_dir="$SPECIFY_FEATURE_DIRECTORY"
         [[ "$feature_dir" != /* ]] && feature_dir="$repo_root/$feature_dir"
-    elif [[ -f "$repo_root/.specify/feature.json" ]]; then
-        # Shared, set -e-safe parser: jq -> python3 -> grep/sed. Returns empty on
-        # missing/unparseable/unset so we fall through to the branch-prefix lookup.
-        local _fd
-        _fd=$(read_feature_json_feature_directory "$repo_root")
-        if [[ -n "$_fd" ]]; then
-            feature_dir="$_fd"
-            # Normalize relative paths to absolute under repo root
-            [[ "$feature_dir" != /* ]] && feature_dir="$repo_root/$feature_dir"
-        elif ! feature_dir=$(find_feature_dir_by_prefix "$repo_root" "$current_branch"); then
-            echo "ERROR: Failed to resolve feature directory" >&2
-            return 1
+        if [[ -f "$feature_dir/spec.md" ]] && layered_layout_from_dir "$feature_dir" >/dev/null; then
+            local module_root module charter charter_dir_abs spec_dim plan task_set
+            module_root=$(layered_layout_from_dir "$feature_dir")
+            module=$(basename "$module_root")
+            charter_dir_abs="$(cd "$(dirname "$feature_dir")/.." && pwd)"
+            charter=$(basename "$charter_dir_abs")
+            spec_dim=$(basename "$feature_dir")
+            plan="default"
+            task_set="default"
+            if [[ -f "$feature_dir/spec.yml" ]] && command -v ruby >/dev/null 2>&1; then
+                plan=$(ruby -ryaml -e "d=YAML.load_file('$feature_dir/spec.yml')||{}; print d['active_plan']||'default'" 2>/dev/null || echo default)
+                task_set=$(ruby -ryaml -e "d=YAML.load_file('$feature_dir/spec.yml')||{}; print d['active_task_set']||'default'" 2>/dev/null || echo default)
+            fi
+            printf 'REPO_ROOT=%q\n' "$repo_root"
+            printf 'CURRENT_BRANCH=%q\n' "$current_branch"
+            printf 'HAS_GIT=%q\n' "$has_git_repo"
+            emit_layered_paths "$repo_root" "$module" "$charter" "$spec_dim" "$plan" "$task_set" "$feature_dir" "$module_root" "$charter_dir_abs"
+            return 0
         fi
-    elif ! feature_dir=$(find_feature_dir_by_prefix "$repo_root" "$current_branch"); then
-        echo "ERROR: Failed to resolve feature directory" >&2
+        speckit_layered_paths_error "$feature_dir"
         return 1
     fi
 
-    # Use printf '%q' to safely quote values, preventing shell injection
-    # via crafted branch names or paths containing special characters
-    printf 'REPO_ROOT=%q\n' "$repo_root"
-    printf 'CURRENT_BRANCH=%q\n' "$current_branch"
-    printf 'HAS_GIT=%q\n' "$has_git_repo"
-    printf 'FEATURE_DIR=%q\n' "$feature_dir"
-    printf 'FEATURE_SPEC=%q\n' "$feature_dir/spec.md"
-    printf 'IMPL_PLAN=%q\n' "$feature_dir/plan.md"
-    printf 'TASKS=%q\n' "$feature_dir/tasks.md"
-    printf 'RESEARCH=%q\n' "$feature_dir/research.md"
-    printf 'DATA_MODEL=%q\n' "$feature_dir/data-model.md"
-    printf 'QUICKSTART=%q\n' "$feature_dir/quickstart.md"
-    printf 'CONTRACTS_DIR=%q\n' "$feature_dir/contracts"
+    local layered_out
+    if layered_out=$(try_resolve_layered_paths "$repo_root" "$current_branch" "$has_git_repo"); then
+        printf '%s\n' "$layered_out"
+        return 0
+    fi
+
+    local _fd
+    _fd=$(read_feature_json_feature_directory "$repo_root")
+    if [[ -n "$_fd" ]]; then
+        local abs_fd="$_fd"
+        [[ "$abs_fd" != /* ]] && abs_fd="$repo_root/$abs_fd"
+        speckit_layered_paths_error "$abs_fd"
+    else
+        echo "ERROR: No layered feature context. Set .specify/feature.json (version 3) or SPECIFY_FEATURE_DIRECTORY to a spec dimension path (specs/<module>/charters/<c>/specs/<dim>)." >&2
+        echo "  Scaffold: .specify/scripts/bash/create-worktree.sh charter --module <module> <charter>" >&2
+    fi
+    return 1
+}
+
+# Locate *-manifest.yml for WORK_ROOT (walk up to spec/plan dir).
+find_manifest_for_work_root() {
+    local work_root="$1"
+    local d="$work_root"
+    while [[ -n "$d" && "$d" != "/" ]]; do
+        for name in spec-manifest.yml plan-manifest.yml charter-manifest.yml; do
+            if [[ -f "$d/$name" ]]; then
+                printf '%s\n' "$d/$name"
+                return 0
+            fi
+        done
+        [[ -f "$d/spec.md" && -f "$d/spec-manifest.yml" ]] && { printf '%s\n' "$d/spec-manifest.yml"; return 0; }
+        [[ -f "$d/plan.md" && -f "$d/plan-manifest.yml" ]] && { printf '%s\n' "$d/plan-manifest.yml"; return 0; }
+        d="$(dirname "$d")"
+    done
+    return 1
 }
 
 # Check if jq is available for safe JSON construction

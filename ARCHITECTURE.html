@@ -1001,7 +1001,8 @@ flowchart TB
 │   │   ├── stack-template.yml / verify-template.md
 │   │   ├── deliver-template.yml / release-template.yml
 │   │   └── automation-maintain-pulse.prompt.md
-│   └── specs/                     # 各特性产物（含 drive.yml / stack.yml / verify.md …）
+│   ├── memory/layered-artifacts.md  # 分层 specs 契约（module→charter→spec→plan→task）
+│   └── specs/                     # 模块产物（分层：shared/、charters/、manifest 分片；或旧式扁平）
 └── .cursor/
     ├── skills/                    # 本地精选 + 增强层固化 skill
     │   ├── speckit-charter/ speckit-drive/ speckit-verify/ …

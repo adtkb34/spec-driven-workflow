@@ -18,8 +18,8 @@ _paths_output=$(get_feature_paths) || { echo "GATE-CHARTER: ERROR resolving feat
 eval "$_paths_output"
 unset _paths_output
 
-CHARTER_YML="$FEATURE_DIR/charter.yml"
-CHARTER_MD="$FEATURE_DIR/charter.md"
+CHARTER_YML="${CHARTER_DIR:-$FEATURE_DIR}/charter.yml"
+CHARTER_MD="${CHARTER_SPEC:-${CHARTER_DIR:-$FEATURE_DIR}/charter.md}"
 fail=0
 
 _is_confirmed_true() {

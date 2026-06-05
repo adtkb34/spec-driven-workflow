@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "module": "production-scheduling",
+  "charter": "main",
+  "spec_dimension": "functional",
+  "plan": "default",
+  "task_set": "default",
+  "work_root": "specs/production-scheduling/charters/main/specs/functional/plans/default/tasks/default",
+  "feature_directory": "specs/production-scheduling/charters/main/specs/functional"
+}

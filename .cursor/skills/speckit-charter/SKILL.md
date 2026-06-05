@@ -31,10 +31,11 @@ The user's message **is** the feature description. Do not ask them to repeat it 
 
 ### 1. Feature directory
 
-Same resolution as speckit-specify: `SPECIFY_FEATURE_DIRECTORY` / `create-new-feature.sh` / `specs/` default. Seed templates if missing:
+Use layered layout only (`create-worktree.sh charter --module <m> <charter>`). Charter artifacts live under **`CHARTER_DIR`** (`specs/<module>/charters/<charter>/`):
 
 - `charter.md` from `.specify/templates/charter-template.md`
 - `charter.yml` from `.specify/templates/charter-template.yml`
+- `README.md`, `shared/README.md`
 
 ### 2. Triage (complexity)
 

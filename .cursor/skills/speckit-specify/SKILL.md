@@ -74,7 +74,7 @@ The text the user typed after `/speckit-specify` in the triggering message **is*
 
 - 检测并向用户列出可能生效的全局偏好来源（Cursor User/Team Rules、`AGENTS.md`、Cursor/Copilot Memories）。
 - 一次确认本特性如何处理：**ignore（默认隔离）/ selective / adopt**；默认 `ignore`，不替用户决定。
-- **落盘**（建特性目录时 `create-new-feature.sh` 会种子模板；否则 `cp .specify/templates/global-prefs-template.yml`）：
+- **落盘**（`create-worktree.sh charter` 会种子；否则 `cp .specify/templates/global-prefs-template.yml` 到 spec 维度目录）：
   - `FEATURE_DIR/global-prefs.yml`：`decision` + `confirmed: true` +（selective 时）`global_prefs_allow`
   - 若已有 `stack.yml`，同步 `global_prefs` / `global_prefs_allow` 与上一致
 - specify 结束前须 `gate-global-prefs.sh` PASS。
@@ -82,9 +82,9 @@ The text the user typed after `/speckit-specify` in the triggering message **is*
 
 ## Charter upstream (已确认 · 只读)
 
-**`FEATURE_DIR/charter.md` 须在 `/speckit-charter` 阶段经用户确认。** specify 从 charter 扩写 spec，不重复 abc 补齐（已迁到 charter）。
+**`CHARTER_DIR/charter.md` 须在 `/speckit-charter` 阶段经用户确认。** specify 从 charter 扩写 spec，不重复 abc 补齐（已迁到 charter）。
 
-1. Read `charter.md` + `charter.yml`；`## Background & Goals` 写 **3–5 句摘要 + 链接** `charter.md`，不复制全文。
+1. Read `CHARTER_DIR/charter.md` + `charter.yml`；`spec.md` 的 `## Background & Goals` 写 **3–5 句摘要 + 链接**，不复制全文。
 2. User Stories / FR / Input Q&A / Post-Draft Ping 逻辑不变；**首条不问卷 ②③④⑤**（未提到则留 Ping）。
 3. 若发现与 charter 冲突，**先改 charter（回 /speckit-charter）**，不得在 spec 静默扩 scope。
 4. **Brainstorming（specify 限定）**：abc 已在 charter 完成；**仅**当用户要求扩 scope 或与 charter 冲突需重新对齐时，激活 `requirements`（brainstorming）— 一次一问或回 charter；**禁止**在 specify 重做 abc 或跑 `partial_approaches` / `writing-plans`。
@@ -114,28 +114,23 @@ Given that feature description and confirmed charter, do this:
 
    Specs live under the default `specs/` directory unless the user explicitly provides `SPECIFY_FEATURE_DIRECTORY`.
 
-   **Resolution order for `SPECIFY_FEATURE_DIRECTORY`**:
-   1. If the user explicitly provided `SPECIFY_FEATURE_DIRECTORY` (e.g., via environment variable, argument, or configuration), use it as-is
-   2. Otherwise, auto-generate it under `specs/`:
-      - Check `.specify/init-options.json` for `branch_numbering`
-      - If `"timestamp"`: prefix is `YYYYMMDD-HHMMSS` (current timestamp)
-      - If `"sequential"` or absent: prefix is `NNN` (next available 3-digit number after scanning existing directories in `specs/`)
-      - Construct the directory name: `<prefix>-<short-name>` (e.g., `003-user-auth` or `20260319-143022-user-auth`)
-      - Set `SPECIFY_FEATURE_DIRECTORY` to `specs/<directory-name>`
+   **Layered layout (preferred for new modules)** — see `.specify/memory/layered-artifacts.md`:
+   - Module: `specs/<module>/` with `charters/<charter>/specs/<dimension>/` (default dimension `functional`).
+   - Scaffold: `.specify/scripts/bash/create-worktree.sh charter --module <m> <charter-slug>`.
+   - Keep `spec.md` as a **thin index**; long content goes in `docs/*` shards registered in `spec-manifest.yml`.
+   - Shared text: `specs/<module>/shared/` or `charters/<c>/shared/` — link from the index, register under `includes` in the manifest.
+   - Persist `.specify/feature.json` **v3** (`version`, `module`, `charter`, `spec_dimension`, `plan`, `task_set`, `work_root`, `feature_directory` → spec dimension path).
 
-   **Create the directory and spec file**:
-   - `mkdir -p SPECIFY_FEATURE_DIRECTORY`
-   - Copy `.specify/templates/global-prefs-template.yml` to `SPECIFY_FEATURE_DIRECTORY/global-prefs.yml` if missing; set `decision` + `confirmed: true` per hard-order ① (or run `create-new-feature.sh` which seeds it)
-   - Copy `.specify/templates/spec-template.md` to `SPECIFY_FEATURE_DIRECTORY/spec.md` as the starting point
-   - Set `SPEC_FILE` to `SPECIFY_FEATURE_DIRECTORY/spec.md`
-   - Persist the resolved path to `.specify/feature.json`:
-     ```json
-     {
-       "feature_directory": "<resolved feature dir>"
-     }
-     ```
-     Write the actual resolved directory path value (for example, `specs/003-user-auth`), not the literal string `SPECIFY_FEATURE_DIRECTORY`.
-     This allows downstream commands (`/speckit-plan`, `/speckit-tasks`, etc.) to locate the feature directory without relying on git branch name conventions.
+   **Resolution**: `SPECIFY_FEATURE_DIRECTORY` must be the **spec dimension** path  
+   `specs/<module>/charters/<charter>/specs/<dimension>/` (usually `functional`).  
+   If missing, run `create-worktree.sh charter --module <module> <charter>` first, then point at `.../specs/functional`.
+
+   **Create / update artifacts** (under spec dimension unless noted):
+   - `spec.md` thin index; shards in `docs/*` + `spec-manifest.yml`
+   - `global-prefs.yml`, `stack.yml`, `spec-coverage.yml`, `phase.yml` at spec dimension
+   - Persist `.specify/feature.json` **v3** (see `.specify/feature.json.v3.example`):
+     `version`, `module`, `charter`, `spec_dimension`, `plan`, `task_set`, `work_root`, `feature_directory`
+   - Flat `specs/NNN-name/` is **not** supported; one-time import: `migrate-specs-layout.sh`
 
    **IMPORTANT**:
    - You must only create one feature per `/speckit-specify` invocation

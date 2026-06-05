@@ -44,11 +44,34 @@ expect_or_skip_ruby() {
     expect "$label" "$want" "$gate" "$@"
 }
 
-# new_fixture <name> -> echoes an absolute, empty fixture dir
+# new_fixture <name> -> echoes spec-dimension dir (layered module tree under TMP)
 new_fixture() {
-    local d="$TMP_ROOT/$1"
-    rm -rf "$d"; mkdir -p "$d"
-    echo "$d"
+    local mod="$TMP_ROOT/$1"
+    local spec_dim="$mod/charters/main/specs/functional"
+    rm -rf "$mod"
+    mkdir -p "$spec_dim/plans/default/tasks/default" "$mod/shared" "$mod/charters/main/shared"
+    echo "version: 1" > "$mod/module.yml"
+    echo "# charter" > "$mod/charters/main/charter.md"
+    printf 'version: 1\nconfirmed: true\ncomplexity: standard\n' > "$mod/charters/main/charter.yml"
+    echo "current_phase: specify" > "$spec_dim/phase.yml"
+    touch "$spec_dim/plans/default/plan.md" "$spec_dim/plans/default/tasks/default/tasks.md" \
+        "$spec_dim/plans/default/verify.md"
+    echo "$spec_dim"
+}
+
+# Plan / task paths for the current $FIX (spec dimension)
+fixture_plan_dir() { echo "$FIX/plans/default"; }
+fixture_tasks_file() { echo "$FIX/plans/default/tasks/default/tasks.md"; }
+fixture_charter_dir() {
+    local d="$FIX"
+    while [[ "$d" != "/" && "$d" != "." ]]; do
+        if [[ -f "$d/charter.md" || -f "$d/charter.yml" ]]; then
+            echo "$d"
+            return 0
+        fi
+        d="$(dirname "$d")"
+    done
+    echo "$FIX"
 }
 
 # expect <label> <expected_exit> <gate-script> [args...]
@@ -272,7 +295,7 @@ YAML
 }
 
 charter_ok() {
-    cat > "$FIX/charter.yml" <<'YAML'
+    cat > "$(fixture_charter_dir)/charter.yml" <<'YAML'
 version: 1
 complexity: standard
 confirmed: true
@@ -280,7 +303,7 @@ YAML
 }
 
 charter_pass_md() {
-    cat > "$FIX/charter.md" <<'CHARTER'
+    cat > "$(fixture_charter_dir)/charter.md" <<'CHARTER'
 # Feature Charter: Gate Test
 
 ## Background & Stakeholders
@@ -340,17 +363,18 @@ charter_pass_md
 expect "confirmed + charter.md -> PASS" 0 gate-charter.sh
 
 FIX="$(new_fixture charter-no-yml)"
+rm -f "$(fixture_charter_dir)/charter.yml"
 charter_pass_md
 expect "无 charter.yml -> BLOCK" 1 gate-charter.sh
 
 FIX="$(new_fixture charter-unconfirmed)"
 charter_pass_md
-printf 'version: 1\ncomplexity: standard\nconfirmed: false\n' > "$FIX/charter.yml"
+printf 'version: 1\ncomplexity: standard\nconfirmed: false\n' > "$(fixture_charter_dir)/charter.yml"
 expect "confirmed:false -> BLOCK" 1 gate-charter.sh
 
 FIX="$(new_fixture charter-template)"
 charter_ok
-cp "$BASH_DIR/../../templates/charter-template.md" "$FIX/charter.md" 2>/dev/null || true
+cp "$BASH_DIR/../../templates/charter-template.md" "$(fixture_charter_dir)/charter.md" 2>/dev/null || true
 expect "模板占位 -> BLOCK" 1 gate-charter.sh
 
 echo "── gate-grill ────────────────────────────────────────────"
@@ -556,22 +580,22 @@ echo "── gate-analyze ──────────────────
 FIX="$(new_fixture analyze-pass)"; stack_ok
 spec_pass_standard
 spec_coverage_standard
-printf '# Plan\nImplementation approach.\n' > "$FIX/plan.md"
-printf '# Tasks\n- [ ] T001 setup\n' > "$FIX/tasks.md"
+printf '# Plan\nImplementation approach.\n' > "$(fixture_plan_dir)/plan.md"
+printf '# Tasks\n- [ ] T001 setup\n' > "$(fixture_tasks_file)"
 expect_or_skip_ruby "clean spec + plan + confirmed stack -> PASS" 0 gate-analyze.sh
 
 FIX="$(new_fixture analyze-no-plan)"; stack_ok
 spec_pass_standard
 spec_coverage_standard
-printf '# Tasks\n- [ ] T001 setup\n' > "$FIX/tasks.md"
+printf '# Tasks\n- [ ] T001 setup\n' > "$(fixture_tasks_file)"
 expect "无 plan.md -> BLOCK" 1 gate-analyze.sh
 
 FIX="$(new_fixture analyze-missing-story)"; stack_ok
 spec_pass_standard
 spec_coverage_standard
-printf '# Plan\nPlan.\n' > "$FIX/plan.md"
+printf '# Plan\nPlan.\n' > "$(fixture_plan_dir)/plan.md"
 printf '## US1 Login\nUser can log in.\n' >> "$FIX/spec.md"
-printf '# Tasks\n- [ ] T001 unrelated setup\n' > "$FIX/tasks.md"
+printf '# Tasks\n- [ ] T001 unrelated setup\n' > "$(fixture_tasks_file)"
 expect "US1 无 task 落点 -> BLOCK" 1 gate-analyze.sh
 
 echo "── gate-verify ───────────────────────────────────────────"
@@ -581,7 +605,7 @@ expect "无 verify.yml -> setup ERROR" 2 gate-verify.sh
 FIX="$(new_fixture verify-fail-cmd)"
 printf 'form: cli\ncomplexity: standard\nglobal_prefs: ignore\nconfirmed: true\n' > "$FIX/stack.yml"
 printf '# Spec\nProse only.\n' > "$FIX/spec.md"
-printf '# Tasks\n- [ ] T001\n' > "$FIX/tasks.md"
+printf '# Tasks\n- [ ] T001\n' > "$(fixture_tasks_file)"
 cat > "$FIX/verify.yml" <<'YAML'
 form: cli
 commands:
@@ -763,6 +787,117 @@ YAML
   unset PULSE_SCHEDULE_FILE PULSE_SCHEDULE_STATE_FILE
 else
   printf '  \033[33mskip\033[0m %-44s (no ruby)\n' "check-pulse-schedule"; skip=$((skip + 1))
+fi
+
+echo "── layered specs (manifest / paths) ─────────────────────"
+if [[ "$HAS_RUBY" -eq 1 ]]; then
+    LFIX="$TMP_ROOT/layered-gate-fixture"
+    rm -rf "$LFIX"
+    mkdir -p "$LFIX/shared" "$LFIX/charters/c1/shared" \
+        "$LFIX/charters/c1/specs/functional/docs" \
+        "$LFIX/charters/c1/specs/functional/plans/default/tasks/default" \
+        "$LFIX/charters/c2/specs/functional/plans/default/tasks/default"
+    echo "version: 1" > "$LFIX/module.yml"
+    echo "# mod" > "$LFIX/README.md"
+    echo "# shared" > "$LFIX/shared/glossary.md"
+    echo "# c1" > "$LFIX/charters/c1/charter.md"
+    echo "# dm" > "$LFIX/charters/c1/shared/domain-model.md"
+    cat > "$LFIX/charters/c1/specs/functional/spec-manifest.yml" <<'YAML'
+version: 1
+index: spec.md
+includes:
+  module: [shared/glossary.md]
+  charter: [shared/domain-model.md]
+shards:
+  body: docs/body.md
+read_scope:
+  specify: [charter.md]
+gate_aggregate_extra: []
+YAML
+    spec_pass_standard_layered() {
+        cat > "$1/charters/c1/specs/functional/spec.md" <<'SPEC'
+# Feature: Layered Gate Test
+
+## Background & Goals
+
+Real background.
+
+## Current State (As-Is)
+
+Greenfield.
+
+## Input Q&A (②③④⑤)
+
+### ② 现状 As-Is
+N/A
+
+### ③ 目标 To-Be
+Goals.
+
+### ④ 约束 Constraints
+None.
+
+### ⑤ 验收 Acceptance
+Done when tests pass.
+SPEC
+    }
+    spec_pass_standard_layered "$LFIX"
+    echo "detail" > "$LFIX/charters/c1/specs/functional/docs/body.md"
+    cp "$LFIX/charters/c1/specs/functional/spec-coverage.yml" "$LFIX/charters/c2/specs/functional/" 2>/dev/null || true
+    stack_ok_layered() {
+        local base="$1/charters/c1/specs/functional"
+        cat > "$base/stack.yml" <<'YAML'
+form: web
+complexity: standard
+ui: false
+global_prefs: ignore
+confirmed: true
+YAML
+        cat > "$base/global-prefs.yml" <<'YAML'
+version: 1
+decision: ignore
+confirmed: true
+confirmed_at: "2026-06-04T12:00:00Z"
+global_prefs_allow: []
+YAML
+        cat > "$base/spec-coverage.yml" <<'YAML'
+version: 1
+ping_completed_at: "2026-06-04T12:00:00Z"
+complexity: standard
+dimensions:
+  background: { status: covered }
+  as_is: { status: covered }
+  baseline: { status: covered }
+YAML
+        echo "current_phase: specify" > "$base/phase.yml"
+        echo "# plan" > "$base/plans/default/plan.md"
+        echo "# tasks" > "$base/plans/default/tasks/default/tasks.md"
+    }
+    stack_ok_layered "$LFIX"
+    LAYERED_SPEC_DIM="$LFIX/charters/c1/specs/functional"
+    export SPECIFY_FEATURE_DIRECTORY="$LAYERED_SPEC_DIM"
+    if "$BASH_DIR/validate-manifest.sh" --work-root "$LAYERED_SPEC_DIM" >/dev/null 2>&1; then
+        printf '  \033[32mok\033[0m   %-44s\n' "validate-manifest layered PASS"; pass=$((pass + 1))
+    else
+        printf '  \033[31mFAIL\033[0m %-44s\n' "validate-manifest layered"; fail=$((fail + 1))
+    fi
+    if "$BASH_DIR/aggregate-spec-text.sh" --work-root "$LAYERED_SPEC_DIM" 2>/dev/null | grep -q 'glossary.md'; then
+        printf '  \033[32mok\033[0m   %-44s\n' "aggregate includes shared"; pass=$((pass + 1))
+    else
+        printf '  \033[31mFAIL\033[0m %-44s\n' "aggregate includes shared"; fail=$((fail + 1))
+    fi
+    if "$BASH_DIR/spec-read-scope.sh" --phase plan 2>/dev/null | grep -q 'tasks.md'; then
+        printf '  \033[31mFAIL\033[0m %-44s\n' "read-scope plan excludes tasks"; fail=$((fail + 1))
+    else
+        printf '  \033[32mok\033[0m   %-44s\n' "read-scope plan excludes tasks"; pass=$((pass + 1))
+    fi
+    _paths=$(SPECIFY_FEATURE_DIRECTORY="$LAYERED_SPEC_DIM" bash -c "source '$BASH_DIR/common.sh'; get_feature_paths") && \
+        eval "$_paths" && [[ -n "${MODULE_DIR:-}" && -f "${PLAN_DIR:-}/plan.md" ]] && \
+        printf '  \033[32mok\033[0m   %-44s\n' "get_feature_paths layered" && pass=$((pass + 1)) || \
+        { printf '  \033[31mFAIL\033[0m %-44s\n' "get_feature_paths layered"; fail=$((fail + 1)); }
+    unset SPECIFY_FEATURE_DIRECTORY
+else
+    printf '  \033[33mskip\033[0m %-44s (no ruby)\n' "layered manifest tests"; skip=$((skip + 1))
 fi
 
 echo "── phase-brief ───────────────────────────────────────────"

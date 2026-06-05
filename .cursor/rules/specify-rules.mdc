@@ -3,6 +3,6 @@ alwaysApply: true
 ---
 
 <!-- SPECKIT: 特性上下文指针（不硬编码路径） -->
-When working on a feature, resolve paths from `.specify/feature.json` → `feature_directory`.
-Read `FEATURE_DIR/phase.yml` for `current_phase`; run `.specify/scripts/bash/phase-brief.sh` for stage questions.
-Do NOT assume a fixed specs/ path from stale examples.
+When working on a feature, resolve paths via `check-prerequisites.sh --paths-only` or `.specify/feature.json` v3 only (see `.specify/memory/layered-artifacts.md`).
+`FEATURE_DIR` = spec dimension; `verify.md` under `PLAN_DIR`. Flat `specs/NNN-*` is unsupported.
+Read `FEATURE_DIR/phase.yml` for workflow phase; `spec-read-scope.sh --phase <phase>` for AI read lists.

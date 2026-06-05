@@ -1,0 +1,12 @@
+version: 1
+index: spec.md
+includes:
+  module: []
+  charter: []
+shards: {}
+read_scope:
+  specify:
+    - charter.md
+  clarify:
+    - spec.md
+gate_aggregate_extra: []

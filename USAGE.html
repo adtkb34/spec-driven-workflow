@@ -290,8 +290,8 @@
       <section id="start">
         <h2>0.1 如何启动一条特性</h2>
         <ol>
-          <li>在仓库根目录用自然语言触发 <code>/speckit-charter</code>（或先 <code>create-new-feature.sh</code> 建 <code>specs/&lt;id&gt;-&lt;name&gt;/</code>）。</li>
-          <li>特性产物落在 <code>specs/&lt;feature&gt;/</code>（<code>charter.md</code>、<code>spec.md</code>、<code>stack.yml</code> …）。可用 <code>SPECIFY_FEATURE_DIRECTORY</code> 指向该目录。</li>
+          <li>新特性：<code>create-worktree.sh module …</code> 后 <code>create-worktree.sh charter --module …</code>（洋葱：<code>specs/&lt;模块&gt;/charters/…/specs/&lt;维度&gt;/plans/…/tasks/…</code>）。<code>create-new-feature.sh</code> 已废弃；旧扁平目录一次性迁移：<code>migrate-specs-layout.sh</code>。</li>
+          <li>产物与状态文件：契约见 <code>.specify/memory/layered-artifacts.md</code>；<code>stack.yml</code> / <code>phase.yml</code> 在 spec 维度；<code>verify.md</code> 在 plan；模块/charter 公用文放在 <code>shared/</code> 并由 <code>spec-manifest.yml</code> 的 <code>includes</code> 引用。人读导航：<code>render-module-hub.sh --module &lt;模块&gt;</code> → <code>specs/&lt;模块&gt;/index.html</code>。</li>
           <li>按阶段依次：<code>/speckit-charter</code> → <code>/speckit-specify</code> → <code>/speckit-clarify</code> → 技术栈闸门 → <code>/speckit-plan</code> → … → <strong>verify</strong>。</li>
           <li>每阶段入口先跑 <code>phase-brief.sh --phase &lt;阶段&gt;</code>（P0 提问）；full ceremony 阶段 AI 输出 5 行开场后<strong>等你回复「继续」</strong>再读 skill 全文。gate 解锁用 <code>--unlock-status</code>（实时，不读 phase.yml 缓存）。</li>
           <li>每阶段结束可记运转日志：<code>run-log.sh phase --phase … --model "&lt;实际模型ID&gt;"</code>（模型填界面上的真实 ID，勿填「Opus」档名）。</li>
@@ -324,7 +324,7 @@
 
       <section id="drive">
         <h2>1.1 AI 驱动推进（<code>/speckit-drive</code> · meta）</h2>
-        <p>不是 P1 流水线阶段；在闸门间<strong>自动 invoke</strong> 各 <code>/speckit-*</code>（greenfield），或在交付后做 <strong>pulse → queue → amend</strong>（maintain）。须特性目录 <code>drive.yml</code> 且 <code>consent: true</code>（<code>create-new-feature.sh</code> 会种子，默认 <code>auto_advance: false</code>）。</p>
+        <p>不是 P1 流水线阶段；在闸门间<strong>自动 invoke</strong> 各 <code>/speckit-*</code>（greenfield），或在交付后做 <strong>pulse → queue → amend</strong>（maintain）。须 spec 维度目录 <code>drive.yml</code> 且 <code>consent: true</code>（<code>create-worktree.sh charter</code> 会种子，默认 <code>auto_advance: false</code>）。</p>
         <ul>
           <li><strong>Greenfield</strong>：<code>tier: greenfield</code> + <code>auto_advance: true</code>；在 <code>pause_at</code>（charter 确认、global-prefs、stack、verify 需人项、release）处<strong>暂停一问</strong>，不硬闯。</li>
           <li><strong>Maintain</strong>：<code>tier: maintain</code>；<code>pulse-log.md</code> + <code>iteration-queue.yml</code>；执行队列走 <code>phase-brief --mode amend</code>，仍须 <code>gate-verify</code>。</li>
@@ -700,8 +700,10 @@
 
       <section id="tools">
         <h2>8. 工具速查</h2>
-        <pre><code># 特性目录（或 export SPECIFY_FEATURE_DIRECTORY=specs/00x-foo）
-.specify/scripts/bash/create-new-feature.sh    # 可选：先建目录
+        <pre><code># 分层特性（spec 维度路径，或 feature.json v3）
+.specify/scripts/bash/create-worktree.sh module &lt;slug&gt;
+.specify/scripts/bash/create-worktree.sh charter --module &lt;slug&gt; &lt;charter&gt;
+.specify/scripts/bash/migrate-specs-layout.sh --source specs/001-old   # 一次性
 .specify/scripts/bash/check-prerequisites.sh --json --paths-only
 
 # 门 + verify 同步

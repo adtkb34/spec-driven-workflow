@@ -47,7 +47,7 @@ cd workflow
 
 交付后可选 meta：<code>/speckit-drive</code>（greenfield 自动推进或 maintain pulse→amend）、<code>/handoff</code>（跨会话续跑）。详见 <a href="USAGE.html#drive">USAGE §1.1</a>。
 
-特性产物默认在 **`specs/`**（已在 `.gitignore`，不提交具体产品代码）。
+特性产物在 **`specs/`**（`.gitignore`）。**仅支持**分层布局：模块 → charter → spec 维度 → plan → task（[layered-artifacts.md](.specify/memory/layered-artifacts.md)）。脚手架：`create-worktree.sh`；旧扁平目录一次性：`migrate-specs-layout.sh`（`create-new-feature.sh` 已废弃）。
 
 ### 阶段提问（P0–P2 / D1–D3）
 

@@ -1,3 +1,10 @@
 {
-  "feature_directory": "specs/001-production-scheduling"
+  "version": 3,
+  "module": "testmod",
+  "charter": "main",
+  "spec_dimension": "functional",
+  "plan": "default",
+  "task_set": "default",
+  "work_root": "specs/testmod/charters/main/specs/functional/plans/default/tasks/default",
+  "feature_directory": "specs/testmod/charters/main/specs/functional"
 }

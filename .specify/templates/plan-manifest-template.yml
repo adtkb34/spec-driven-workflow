@@ -1,0 +1,10 @@
+version: 1
+index: plan.md
+includes:
+  module: []
+  charter: []
+shards: {}
+read_scope:
+  plan:
+    - plan.md
+gate_aggregate_extra: []

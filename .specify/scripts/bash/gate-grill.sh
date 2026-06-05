@@ -21,7 +21,7 @@ unset _paths_output
 
 GRILL_YML="$FEATURE_DIR/grill.yml"
 GRILL_LOG="$FEATURE_DIR/grill-log.md"
-CHARTER_YML="$FEATURE_DIR/charter.yml"
+CHARTER_YML="${CHARTER_DIR:-$FEATURE_DIR}/charter.yml"
 STACK_FILE="$FEATURE_DIR/stack.yml"
 fail=0
 
